@@ -1,0 +1,6 @@
+# --- Comentarios (inician con #) ---
+# Ignorar directorios enteros
+node_modules/
+dist/
+build/
+.vscode/
