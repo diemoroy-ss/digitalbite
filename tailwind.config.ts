@@ -26,6 +26,10 @@ const config: Config = {
         'brand-indigo': '#6366F1', // Un índigo vibrante
         'card-bg': '#0F172A', // Slate-900 para tarjetas sobre fondo negro
       },
+      fontFamily: {
+        'ag-display': ['var(--font-space)', 'sans-serif'],
+        'ag-body': ['var(--font-inter)', 'sans-serif'],
+      },
     },
   },
   plugins: [],

@@ -4,3 +4,13 @@ node_modules/
 dist/
 build/
 .vscode/
+
+# Next.js
+.next/
+out/
+
+# Environment variables
+.env*.local
+
+# Tailwind / Vercel
+.vercel/

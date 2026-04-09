@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "id": "PAY_PER_USE",
+      "title": "Archivo generado - DigitalBite",
+      "description": "Pago por uso de generación única.",
+      "quantity": 1,
+      "unit_price": 2990,
+      "currency_id": "CLP"
+    }
+  ],
+  "payer": {
+    "email": "spalezcom@gmail.com"
+  },
+  "external_reference": "ts3b8JzxJWMi4Ap5rXbjPn2xMlu2",
+  "back_urls": {
+    "success": "http://localhost:3001/dashboard?payment=success",
+    "pending": "http://localhost:3001/dashboard",
+    "failure": "http://localhost:3001/dashboard?payment=failure"
+  }
+}

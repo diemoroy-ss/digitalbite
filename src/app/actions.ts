@@ -16,7 +16,7 @@ export async function sendToN8n(formData: FormData): Promise<void> {
     nombre: formData.get('nombre'),
     email: formData.get('email'),
     telefono: formData.get('telefono'),
-    origen: 'santisoft.cl',
+    origen: 'digitalbite.app',
     fecha: new Date().toISOString()
   };
 

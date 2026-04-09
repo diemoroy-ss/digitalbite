@@ -1,6 +1,5 @@
 "use client";
 import React from 'react';
-import { sendToN8n } from '@/app/actions';
 
 export default function PlanModal({ isOpen, onClose, planName }: { isOpen: boolean, onClose: () => void, planName: string }) {
   if (!isOpen) return null;
@@ -11,7 +10,7 @@ export default function PlanModal({ isOpen, onClose, planName }: { isOpen: boole
     formData.append('plan', planName);
     formData.append('type', 'info_request');
     
-    await sendToN8n(formData);
+    await fetch('/api/contact', { method: 'POST', body: formData }).catch(console.error);
     alert("Solicitud enviada con éxito. Revisa tu correo.");
     onClose();
   };

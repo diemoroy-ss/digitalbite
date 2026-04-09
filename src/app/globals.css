@@ -1,39 +1,260 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Oswald:wght@400;600;700&family=Bebas+Neue&family=Pacifico&family=Montserrat:wght@400;700;900&family=Playfair+Display:wght@400;700;900&family=Anton&family=Roboto+Condensed:wght@400;700&family=Dancing+Script:wght@400;700&display=swap');
+
 @import "tailwindcss";
 
+:root {
+  --color-bg:             #f8f7f4;
+  --color-surface:        #ffffff;
+  --color-border:         #e5e3de;
+  --color-accent:         #0ea472;
+  --color-accent-hover:   #0d7a54;
+  --color-accent-glow:    rgba(14, 164, 114, 0.35);
+  --color-text-primary:   #1a1916;
+  --color-text-secondary: #6b6860;
+  --color-text-subtle:    #9e9b95;
+  --shadow-btn:           0 2px 12px rgba(14, 164, 114, 0.35);
+  --shadow-premium:       0 10px 40px -10px rgba(0,0,0,0.08);
+
+  /* Legacy aliases */
+  --bg:      #f8f7f4;
+  --surface: #ffffff;
+  --border:  #e5e3de;
+  --text:    #1a1916;
+  --muted:   #6b6860;
+  --muted2:  #9e9b95;
+}
+
+/* Panel Premium Styles / Redesign Utility Classes */
+.panel-grid-bg {
+  background-color: #f8f7f4;
+  background-image: radial-gradient(at 0% 0%, rgba(14, 164, 114, 0.03) 0, transparent 50%), 
+                    radial-gradient(at 50% 0%, rgba(26, 25, 22, 0.01) 0, transparent 50%);
+}
+
+.premium-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(229, 227, 222, 0.6);
+  border-radius: 32px;
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-premium);
+}
+
+.premium-card:hover {
+  border-color: #0ea472;
+  box-shadow: 0 20px 50px -12px rgba(14, 164, 114, 0.12);
+  transform: translateY(-4px);
+}
+
 @theme {
-  --animate-blob: blob 7s infinite;
-  
+  --animate-blob: blob 8s infinite;
+
   @keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
+    0%   { transform: translate(0,0) scale(1); }
+    33%  { transform: translate(30px,-50px) scale(1.1); }
+    66%  { transform: translate(-20px,20px) scale(0.9); }
+    100% { transform: translate(0,0) scale(1); }
+  }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0) scale(1); }
+    50%     { transform: translateY(-28px) scale(1.04); }
+  }
+
+  @keyframes shimmer {
+    0%,100% { background-position: 0%; }
+    50%     { background-position: 100%; }
+  }
+
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(14, 164, 114, 0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(14, 164, 114, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(14, 164, 114, 0); }
+  }
+
+  @keyframes pulse-soft {
+    0%,100% { opacity:1; }
+    50%     { opacity:.4; }
+  }
+
+  @keyframes eyebrow-pulse {
+    0%,100% { opacity:1; transform: scale(1); }
+    50%     { opacity:0.4; transform: scale(0.6); }
   }
 }
 
-:root {
-  --background: #030712;
-  --foreground: #ffffff;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
   overflow-x: hidden;
+  line-height: 1.65;
 }
 
-/* Clases utilitarias personalizadas */
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
+.font-display { font-family: 'Syne', sans-serif !important; }
+
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(16px);
+  border: 0.5px solid var(--color-border);
+}
+
+/* ==========================================================================
+   EYEBROW
+   ========================================================================== */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 0.5px solid #e5e3de;
+  border-radius: 99px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #0ea472;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 6px rgba(0,0,0,.07);
+}
+
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  background: #0ea472;
+  border-radius: 50%;
+  animation: eyebrow-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+.hero-section {
+  background: linear-gradient(180deg, #f0faf6 0%, #f8f7f4 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 250px;
+  background: radial-gradient(ellipse, rgba(14,164,114,.08) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.btn-primary {
+  background: #0ea472 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-btn) !important;
+  transition: box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 20px rgba(14, 164, 114, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #1a1916 !important;
+  border: 0.5px solid #d9d7d1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05) !important;
+}
+
+/* ==========================================================================
+   SERVICE CARDS
+   ========================================================================== */
+.service-card {
+  background: #f8f7f4 !important;
+  border: 0.5px solid #e5e3de !important;
+  border-radius: 12px !important;
+  transition: border-color 0.2s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.service-card:hover {
+  border-color: #0ea472 !important;
+}
+
+.service-icon {
+  width: 36px !important;
+  height: 36px !important;
+  background: #ffffff !important;
+  border: 0.5px solid #e5e3de !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05) !important;
+  font-size: 16px !important;
+}
+
+/* ==========================================================================
+   PRICE CARDS
+   ========================================================================== */
+.price-card {
+  background: #ffffff !important;
+  border: 0.5px solid #e5e3de !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,.04) !important;
+}
+
+.price-card-featured {
+  border: 1.5px solid #0ea472 !important;
+  box-shadow: 0 2px 16px rgba(14, 164, 114, 0.12) !important;
+}
+
+.price-badge-popular {
+  background: rgba(14, 164, 114, 0.1) !important;
+  color: #0a7a52 !important;
+  border: 0.5px solid rgba(14, 164, 114, 0.3) !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 2px 8px !important;
+}
+
+/* ==========================================================================
+   STATS
+   ========================================================================== */
+.stats-container {
+  background: #ffffff;
+  border: 0.5px solid #e5e3de;
+  border-radius: 12px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.05);
+  overflow: hidden;
 }

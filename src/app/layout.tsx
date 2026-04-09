@@ -1,120 +1,73 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
-
-// ⚠️ Usamos rutas relativas (../) para evitar el error del alias @
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import AlertModal from "../components/AlertModal";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Santisoft | Desarrollo de Sitios Web y Apps con IA",
-  description: "Agencia líder en Chile en creación de sitios web, aplicaciones móviles y automatización de procesos utilizando Inteligencia Artificial avanzada. Sin límites técnicos.",
-  keywords: [
-    "Desarrollo IA Chile", 
-    "Creación de sitios web con IA", 
-    "Apps con Inteligencia Artificial", 
-    "Automatización n8n Chile", 
-    "Santisoft", 
-    "Agencia de software IA",
-    "Transformación digital Santiago"
-  ],
-  authors: [{ name: "Felipe Bermúdez", url: "https://santisoft.cl" }],
-  creator: "Santisoft AI Agency",
-  publisher: "Santisoft",
+  title: "DigitalBite | El Editor Gráfico Inteligente para Restaurantes",
+  description: "Crea banners, posts y menús digitales para tu restaurante en segundos con Inteligencia Artificial. La herramienta definitiva para marketing gastronómico.",
+  keywords: ["Marketing Gastronómico","Menú Digital","Banners para Restaurantes","Editor de Imágenes IA","DigitalBite","Diseño para Comida","Publicidad Restaurantes"],
+  authors: [{ name: "DigitalBite Team", url: "https://digitalbite.app" }],
+  creator: "DigitalBite AI",
+  publisher: "DigitalBite",
   robots: "index, follow",
-  alternates: {
-    canonical: "https://santisoft.cl",
-  },
+  alternates: { canonical: "https://digitalbite.app" },
   openGraph: {
-    type: "website",
-    locale: "es_CL",
-    url: "https://santisoft.cl",
-    title: "Santisoft - El futuro del desarrollo con IA",
-    description: "Creamos software, webs y apps que antes eran imposibles. Potencia tu empresa con agentes autónomos y tecnología de vanguardia.",
-    siteName: "Santisoft",
-    images: [
-      {
-        url: "/og-image.jpg", 
-        width: 1200,
-        height: 630,
-        alt: "Santisoft AI Development",
-      },
-    ],
+    type: "website", locale: "es_CL", url: "https://digitalbite.app",
+    title: "DigitalBite - Diseño Gastronómico con IA",
+    description: "Crea banners, menús y videos para tu restaurante en segundos con Inteligencia Artificial.",
+    siteName: "DigitalBite",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "DigitalBite AI Design" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Santisoft | Desarrollo IA sin límites",
+    title: "DigitalBite | Diseño Gastronómico IA sin límites",
     description: "Sitios Web, Apps y Automatizaciones impulsadas por IA en Chile.",
     images: ["/og-image.jpg"],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#030712",
+  themeColor: "#02060f",
   width: "device-width",
   initialScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+import MainWrapper from "../components/MainWrapper";
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className="scroll-smooth">
+    <html lang="es" className={`scroll-smooth ${spaceGrotesk.variable} ${inter.variable}`}>
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ProfessionalService",
-              "name": "Santisoft",
-              "image": "https://santisoft.cl/logo.png",
-              "@id": "https://santisoft.cl",
-              "url": "https://santisoft.cl",
-              "telephone": "", 
-              "address": {
-                "@type": "PostalAddress",
-                "streetAddress": "Chicauma",
-                "addressLocality": "Lampa",
-                "addressRegion": "RM",
-                "addressCountry": "CL"
-              },
-              "geo": {
-                "@type": "GeoCoordinates",
-                "latitude": -33.284, 
-                "longitude": -70.885
-              },
-              "openingHoursSpecification": {
-                "@type": "OpeningHoursSpecification",
-                "dayOfWeek": [
-                  "Monday",
-                  "Tuesday",
-                  "Wednesday",
-                  "Thursday",
-                  "Friday"
-                ],
-                "opens": "09:00",
-                "closes": "18:00"
-              },
-              "sameAs": [
-                "https://www.linkedin.com/company/santisoft"
-              ],
-              "description": "Agencia de desarrollo impulsada por Inteligencia Artificial especializada en sitios web y aplicaciones."
-            })
-          }}
-        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context":"https://schema.org","@type":"ProfessionalService",
+          "name":"DigitalBite","image":"https://digitalbite.app/logo.png",
+          "@id":"https://digitalbite.app","url":"https://digitalbite.app",
+        })}} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#030712] text-slate-100 selection:bg-blue-500/30 min-h-screen flex flex-col`}>
+      <body className="antialiased min-h-screen flex flex-col" style={{ background: '#f8f7f4', color: '#1a1916' }}>
         <Navbar />
-        {/* El padding top compensa el Navbar fijo en escritorio y móvil */}
-        <main className="flex-grow pt-28 md:pt-40">
+        <MainWrapper>
           {children}
-        </main>
+        </MainWrapper>
+        <AlertModal />
         <Footer />
       </body>
     </html>
