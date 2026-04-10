@@ -24,7 +24,16 @@ jobs:
             echo "1. Navegando a la carpeta /var/www/digitalbite-app..."
             cd /var/www/digitalbite-app
             
-            echo "2. Forzando actualización de la última versión de GitHub..."
+            echo "2. Verificando repositorio Git..."
+            if [ ! -d ".git" ]; then
+              echo "Carpeta no es un repositorio. Inicializando..."
+              git init
+              git remote add origin https://github.com/diemoroy-ss/digitalbite.git
+            else
+              echo "Repositorio Git detectado."
+            fi
+            
+            echo "3. Forzando actualización de la última versión de GitHub..."
             git fetch --all
             git reset --hard origin/main
             
