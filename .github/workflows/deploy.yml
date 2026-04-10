@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@master
@@ -20,17 +20,22 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            # Navegar a la carpeta del proyecto
+            set -e
+            echo "1. Navegando a la carpeta /var/www/digitalbite-app..."
             cd /var/www/digitalbite-app
             
-            # Actualizar código
-            git pull origin main
+            echo "2. Forzando actualización de la última versión de GitHub..."
+            git fetch --all
+            git reset --hard origin/main
             
-            # Instalar dependencias
-            npm install
+            echo "3. Instalando dependencias..."
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            npm install --legacy-peer-deps
             
-            # Construir para producción
+            echo "4. Construyendo proyecto para producción..."
             npm run build
             
-            # Reiniciar la aplicación con PM2
+            echo "5. Reiniciando procesos con PM2..."
             pm2 restart all || pm2 start npm --name "digitalbite" -- start
+            echo "¡Despliegue completado!"
