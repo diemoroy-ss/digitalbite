@@ -34,11 +34,22 @@ export async function POST(req: Request) {
           const userRef = doc(db, "users", userId);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-             // Incrementar límite en 1 (o dar un crédito temporal, dependiendo de tu lógica exacta).
-             // Por ejemplo, le sumamos 1 a su límite para que pueda restarlo al descargar.
              const currentLimit = userSnap.data().generationLimit || 0;
              await updateDoc(userRef, {
                generationLimit: currentLimit + 1
+             });
+          }
+        } else if (userId.includes("___")) {
+          // Cobro de Suscripción (Recurrente o Inicial)
+          const [uId, pId] = userId.split("___");
+          const userRef = doc(db, "users", uId);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+             // Es una renovación, reseteamos contadores para el nuevo mes
+             await updateDoc(userRef, {
+               generationCount: 0,
+               videoGenerationCount: 0,
+               lastPaymentDate: new Date()
              });
           }
         }
@@ -67,7 +78,9 @@ export async function POST(req: Request) {
             videoLimit: planData.videoLimit,
             // Reset de conteos mensuales
             generationCount: 0,
-            videoGenerationCount: 0
+            videoGenerationCount: 0,
+            subscriptionId: dataId,
+            lastPaymentDate: new Date()
           });
         }
       }

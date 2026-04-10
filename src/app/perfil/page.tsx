@@ -31,6 +31,46 @@ export default function PerfilUsuario() {
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isHeavyUser, setIsHeavyUser] = useState(false);
+  const [checkingUsage, setCheckingUsage] = useState(false);
+
+  const handleCancelClick = async () => {
+     setShowCancelModal(true);
+     setCheckingUsage(true);
+     try {
+        let count = 0;
+        const d = new Date();
+        const yearMonth = `${d.getFullYear()}_${(d.getMonth()+1).toString().padStart(2, '0')}`;
+        const prevDate = new Date(d.setMonth(d.getMonth() - 1));
+        const prevYearMonth = `${prevDate.getFullYear()}_${(prevDate.getMonth()+1).toString().padStart(2, '0')}`;
+        
+        const currentRef = doc(db, "users", auth.currentUser!.uid, "usage_stats", yearMonth);
+        const prevRef = doc(db, "users", auth.currentUser!.uid, "usage_stats", prevYearMonth);
+
+        const [cSnap, pSnap] = await Promise.all([getDoc(currentRef), getDoc(prevRef)]);
+        
+        if (cSnap.exists()) count += cSnap.data().count || 0;
+        if (pSnap.exists()) count += pSnap.data().count || 0;
+
+        setIsHeavyUser(count >= 50);
+     } catch (e) {
+        setIsHeavyUser(false);
+     } finally {
+        setCheckingUsage(false);
+     }
+  };
+
+  const confirmCancel = () => {
+      alert("Tu suscripción será cancelada al final de tu ciclo de facturación (Integrar Mercado Pago API).");
+      setShowCancelModal(false);
+  };
+  
+  const acceptDiscount = () => {
+      alert("¡Oferta aplicada! Tu suscripción se mantendrá con el precio reducido.");
+      setShowCancelModal(false);
+  };
+
   const [rut, setRut] = useState("");
   const [razon, setRazon] = useState("");
   const [giro, setGiro] = useState("");
@@ -181,9 +221,20 @@ export default function PerfilUsuario() {
                        </Link>
                     </div>
                  )}
-              </div>
+               </div>
 
-           </div>
+               {/* Acciones de Suscripción */}
+               {perfil.plan !== "Free" && (
+                  <div className="bg-rose-50 border border-rose-200 p-6 rounded-3xl shadow-sm text-center mt-6">
+                     <h3 className="text-sm font-bold text-rose-700 mb-2 uppercase tracking-widest">Suscripción</h3>
+                     <p className="text-xs text-rose-600/80 mb-4">Si cancelas, perderás el acceso a la creación ilimitada y plantillas premium.</p>
+                     <button type="button" onClick={handleCancelClick} className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-colors w-full">
+                        Dar de Baja
+                     </button>
+                  </div>
+               )}
+
+            </div>
 
            {/* Facturacion Settings */}
            <div className="md:col-span-2">
@@ -253,6 +304,42 @@ export default function PerfilUsuario() {
 
         </div>
       </div>
+
+      {/* Modal Retención/Cancelación */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8 text-center relative">
+            <button onClick={() => setShowCancelModal(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">✕</button>
+            <div className="text-5xl mb-4">💔</div>
+            
+            {checkingUsage ? (
+               <div className="py-6">
+                 <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                 <p className="text-slate-500 font-bold">Verificando tu perfil...</p>
+               </div>
+            ) : isHeavyUser ? (
+               <>
+                 <h3 className="text-xl font-black text-slate-900 mb-2">¿Seguro que quieres cancelar?</h3>
+                 <p className="text-slate-500 text-sm mb-6">Hemos notado que usas bastante la plataforma. Si cancelas, perderás todo el acceso al final de tu ciclo.</p>
+                 <div className="flex flex-col gap-3">
+                   <button onClick={() => setShowCancelModal(false)} className="bg-slate-800 text-white font-bold py-3 px-4 rounded-xl hover:bg-slate-900">Mantener mi Suscripción</button>
+                   <button onClick={confirmCancel} className="text-rose-500 font-bold py-3 px-4 rounded-xl hover:bg-rose-50">Sí, Cancelar Definitivamente</button>
+                 </div>
+               </>
+            ) : (
+               <>
+                 <h3 className="text-xl font-black text-slate-900 mb-2">¡Espera! No te vayas aún</h3>
+                 <p className="text-slate-500 text-sm mb-6">Queremos ayudarte a crecer. Te ofrecemos un <strong>50% de descuento por 2 meses</strong> para que sigas creando sin pensar en el presupuesto.</p>
+                 <div className="flex flex-col gap-3">
+                   <button onClick={acceptDiscount} className="bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-emerald-600">Aceptar Oferta de 50% Off</button>
+                   <button onClick={confirmCancel} className="text-slate-400 font-bold py-2 px-4 rounded-xl hover:text-slate-600 text-sm">No gracias, cancelar de todos modos</button>
+                 </div>
+               </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

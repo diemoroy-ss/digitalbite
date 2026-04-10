@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { collection, getDocs, addDoc, query, orderBy, getDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, query, orderBy, getDoc, doc, setDoc, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../../lib/firebase";
 
@@ -14,6 +14,7 @@ import { BANNER_IDEAS, CheckCircle, Play, Smartphone } from "../../components/Te
 import type { TextLayer } from "../../components/TextLayerEditor";
 import Link from "next/link";
 import ChatBot from "../../components/ChatBot";
+import ProfileMenu from "../../components/ProfileMenu";
 
 function AutoRetryImage({ url, alt, className, shouldLoad, onLoaded }: { url: string; alt: string; className: string; shouldLoad: boolean; onLoaded?: () => void }) {
   const [src, setSrc] = useState<string | null>(null);
@@ -327,6 +328,25 @@ export default function GastronomicoPage() {
         urls.push(butterflyUrl);
       }
 
+      if (auth.currentUser) {
+        const d = new Date();
+        const yearMonth = `${d.getFullYear()}_${(d.getMonth()+1).toString().padStart(2, '0')}`;
+        const usageRef = doc(db, "users", auth.currentUser.uid, "usage_stats", yearMonth);
+        const usageSnap = await getDoc(usageRef);
+        if (usageSnap.exists()) {
+           await updateDoc(usageRef, {
+              count: (usageSnap.data().count || 0) + 1,
+              lastGeneratedAt: new Date()
+           });
+        } else {
+           await setDoc(usageRef, {
+              count: 1,
+              lastGeneratedAt: new Date(),
+              yearMonth
+           });
+        }
+      }
+
       setRenderingIndex(0);
       setImageUrlWatermark(urls);
       setShowResultModal(true);
@@ -465,13 +485,29 @@ export default function GastronomicoPage() {
         }} />
       <div className="absolute inset-0 z-0 pointer-events-none opacity-40 bg-gradient-to-br from-rose-50/50 via-transparent to-orange-50/50" />
 
+      {/* Navbar Superior (Top Bar) para el Editor */}
+      <div className="w-full bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
+        <div className="max-w-[1500px] mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <img src="/logo-digitalbite.png" alt="DigitalBite Logo" className="h-6 w-auto" />
+            <span className="font-bold text-slate-800 hidden md:inline ml-1 text-sm tracking-tight text-[15px]">DigitalBite</span>
+          </Link>
+
+          <div className="flex items-center gap-4">
+             {authLoading ? (
+                 <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+             ) : (
+                 <ProfileMenu user={user} userDoc={userDoc} />
+             )}
+          </div>
+        </div>
+      </div>
+
       {/* Contenedor principal expandido para aprovechar pantallas grandes */}
       <div className="w-full max-w-[1500px] mx-auto px-6 md:px-12 pt-16 relative z-10">
 
         <header className="mb-14 text-center max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 relative">
           
-          {/* Top Auth Bar removido para centrar navegación en el Navbar superior */}
-
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-rose-600 text-[12px] font-bold tracking-widest uppercase mb-6 mx-auto mt-6 md:mt-0">
             <span>🎨</span> Generador AI
           </div>
