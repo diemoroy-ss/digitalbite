@@ -17,6 +17,11 @@ type FilterType = "todos" | "stories" | "menu" | "feed";
 
 const PAGE_SIZE = 9;
 
+// URL del render final generado por Butterfly (imagen completa con capas)
+function butterflyUrl(id: string) {
+  return `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${id}`)}`;
+}
+
 const FILTER_LABELS: { key: FilterType; label: string; emoji: string }[] = [
   { key: "todos", label: "Todos", emoji: "🎨" },
   { key: "stories", label: "Stories", emoji: "📱" },
@@ -51,7 +56,7 @@ export default function DesignGallery() {
         const snap = await getDocs(q);
         const docs: DesignItem[] = snap.docs
           .map(d => ({ id: d.id, ...d.data(), _snap: d } as DesignItem))
-          .filter(d => d.fondoUrl || d.imageUrl);
+          .filter(d => !!d.id); // Solo necesitamos ID para generar URL de Butterfly
         setAllItems(docs);
         setLastSnap(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE * 3);
@@ -77,7 +82,7 @@ export default function DesignGallery() {
       const snap = await getDocs(q);
       const docs: DesignItem[] = snap.docs
         .map(d => ({ id: d.id, ...d.data(), _snap: d } as DesignItem))
-        .filter(d => d.fondoUrl || d.imageUrl);
+        .filter(d => !!d.id);
       setAllItems(prev => [...prev, ...docs]);
       setLastSnap(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE * 2);
@@ -163,7 +168,7 @@ export default function DesignGallery() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={item.fondoUrl || item.imageUrl || ""}
+                src={butterflyUrl(item.id)}
                 alt={item.titulo || "Diseño DigitalBite"}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
@@ -248,7 +253,7 @@ export default function DesignGallery() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={visible[lightbox.idx]?.fondoUrl || visible[lightbox.idx]?.imageUrl || ""}
+              src={butterflyUrl(visible[lightbox.idx]?.id)}
               alt="Diseño ampliado"
               className="w-full h-auto object-contain max-h-[85vh]"
             />

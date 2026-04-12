@@ -12,6 +12,11 @@ interface RenderItem {
 
 const INTERVAL_MS = 3500;
 
+// URL del render final generado por Butterfly (imagen completa con capas)
+function butterflyUrl(id: string) {
+  return `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${id}`)}`;
+}
+
 export default function HeroCarousel() {
   const [items, setItems] = useState<RenderItem[]>([]);
   const [current, setCurrent] = useState(0);
@@ -26,7 +31,7 @@ export default function HeroCarousel() {
         const snap = await getDocs(q);
         const docs: RenderItem[] = snap.docs
           .map(d => ({ id: d.id, ...d.data() } as RenderItem))
-          .filter(d => d.fondoUrl || d.imageUrl);
+          .filter(d => !!d.id); // Solo necesitamos el ID para Butterfly
 
         // Shuffle — tomar 4 aleatorios del pool de 12
         const shuffled = docs.sort(() => Math.random() - 0.5).slice(0, 4);
@@ -96,7 +101,7 @@ export default function HeroCarousel() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={item.fondoUrl || item.imageUrl || ""}
+              src={butterflyUrl(item.id)}
               alt="Diseño DigitalBite"
               className="w-full h-full object-cover"
               draggable={false}
