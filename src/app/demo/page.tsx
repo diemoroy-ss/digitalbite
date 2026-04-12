@@ -324,7 +324,7 @@ export default function GastronomicoPage() {
         if (i === 0) setCodigoPedido(renderId);
 
         const targetUrl = `${origin}/render?id=${renderId}`;
-        const butterflyUrl = `https://butterfly.digitalbite.app/link-previews/v1?url=${encodeURIComponent(targetUrl)}`;
+        const butterflyUrl = `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(targetUrl)}`;
         urls.push(butterflyUrl);
       }
 
@@ -361,7 +361,7 @@ export default function GastronomicoPage() {
   const handleVideo = async (e: React.FormEvent) => {
     e.preventDefault(); setLoadingVideo(true);
     try {
-      const r = await fetch("https://n8n.digitalbite.app/webhook/generador-gastronomico-video", {
+      const r = await fetch("https://n8n.santisoft.cl/webhook/generador-gastronomico-video", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tipo: "video", codigoPedido, layoutId: selectedLayout, categoria: selectedTemplate, ...videoData, ...formData }),
       });

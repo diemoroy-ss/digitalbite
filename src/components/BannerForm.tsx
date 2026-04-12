@@ -22,7 +22,7 @@ export interface MenuScreenData {
   menuItems3?: { name: string; price: string; desc?: string }[];
   scale?: number; scale2?: number; scale3?: number;
   visible?: boolean; visible2?: boolean; visible3?: boolean;
-  bgColor?: string; bgOpacity?: number;
+  bgColor?: string; bgOpacity?: number; customZ?: number;
   posX?: number; posX2?: number; posX3?: number;
   posY?: number; posY2?: number; posY3?: number;
   width?: number; width2?: number; width3?: number;
@@ -208,7 +208,7 @@ function MenuListEditor({ menuData, onChange, onOpenProduct, formato }: { menuDa
   );
 }
 
-export default function BannerForm({ formData, setFormData, handleImg, loadingImg, selectedLayoutObj, imageUrlWatermark, setShowResultModal, pendingProductToAdd, setPendingProductToAdd, onOpenProductModal, validLayouts, customFonts, products, productsError, userDoc }: BannerFormProps) {
+export default function BannerForm({ formData, setFormData, handleImg, loadingImg, selectedLayoutObj, imageUrlWatermark, setShowResultModal, pendingProductToAdd, setPendingProductToAdd, onOpenProductModal, validLayouts, customFonts, products, productsError, userDoc, categorySlug }: BannerFormProps) {
   const screensCount = formData.screensCount || 1;
   const isMultiScreen = formData.formato === 'tv_h' || formData.formato === 'tv_v';
 
@@ -217,7 +217,8 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [customImageLoading, setCustomImageLoading] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [activeRightPanel, setActiveRightPanel] = useState<'PROPERTIES' | 'GALLERY'>('PROPERTIES');
+  const [activeRightPanel, setActiveRightPanel] = useState<'PROPERTIES' | 'GALLERY' | 'TEXTS_LIST' | 'LAYERS_LIST'>('PROPERTIES');
+  const [activeGalleryType, setActiveGalleryType] = useState<'producto' | 'precio'>('producto');
   const [galleryCategory, setGalleryCategory] = useState<string>('todas');
   const [isUploadingProduct, setIsUploadingProduct] = useState(false);
 
@@ -232,15 +233,22 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
         const targetIdx = activeScreenIndex;
         const currentLayers = [...(copy[targetIdx] || [])];
         
-        const activeIdx = currentLayers.findIndex(l => l.id === activeLayerId && (l.type === "image" || l.type === "logo"));
+        let foundIdx = -1;
         
-        if (activeIdx !== -1) {
-           currentLayers[activeIdx] = { ...currentLayers[activeIdx], text: pendingProductToAdd };
+        if (activeGalleryType === 'precio') {
+           foundIdx = currentLayers.findIndex(l => l.fieldKey === 'precio');
         } else {
-           const newImg = createImageLayer(pendingProductToAdd);
-           newImg.fontSize = 350; newImg.posY = 50;
-           currentLayers.push(newImg);
-           setTimeout(() => setActiveLayerId(newImg.id), 0);
+           foundIdx = currentLayers.findIndex(l => l.id === activeLayerId && (l.type === "image" || l.type === "logo") && l.fieldKey !== 'precio');
+           if (foundIdx === -1) {
+              foundIdx = currentLayers.findIndex(l => l.type === "image" && l.fieldKey !== 'precio');
+           }
+        }
+        
+        if (foundIdx !== -1) {
+           currentLayers[foundIdx] = { ...currentLayers[foundIdx], text: pendingProductToAdd };
+           setTimeout(() => setActiveLayerId(currentLayers[foundIdx].id), 0);
+        } else {
+           console.warn("No se encontró ninguna imagen en la plantilla para reemplazar.");
         }
         copy[targetIdx] = currentLayers;
         return copy;
@@ -278,18 +286,31 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
       setLayersByScreen(prev => { const c = [...prev]; c[activeScreenIndex] = defs; return c; });
     }
   }, [currentLayoutId, formData.formato, activeScreenIndex]);
+  
+  // Condición de si la plantilla soporta menú
+  let templateSupportsMenu = false;
+  if (currentScreenLayoutObj) {
+     const tpl = currentScreenLayoutObj as any;
+     const fmt = isVertical ? 'story' : formData.formato;
+     const cat = categorySlug || 'general';
+     // check layouts
+     let tplMenu = null;
+     if (tpl.layouts && tpl.layouts[cat] && tpl.layouts[cat][fmt]) {
+         tplMenu = tpl.layouts[cat][fmt].menuData;
+     } else {
+         if (isVertical) tplMenu = tpl.defaultMenuDataVertical;
+         else if (formData.formato === "post") tplMenu = tpl.defaultMenuDataPost;
+         else if (formData.formato === "tv_h") tplMenu = tpl.defaultMenuDataHorizontal;
+     }
+     if (tplMenu && tplMenu.isMenuMode) {
+         templateSupportsMenu = true;
+     }
+  }
 
   const addCustomLayer = (idx: number) => {
     const l = createLayer("Nuevo Texto");
     setLayersByScreen(prev => { const c = [...prev]; c[idx] = [...(c[idx] || []), l]; return c; });
     setActiveLayerId(l.id);
-  };
-
-  const addPriceLayer = (idx: number) => {
-    const b: TextLayer = { id: "b-"+Math.random(), type:"badge", text:"", posX:40, posY:40, fontSize:80, color:"#000", fontWeight:"bold", fontFamily:"sans", shadow:false, badgeStyle:1 };
-    const p: TextLayer = { id: "p-"+Math.random(), type:"text", text:"$9.990", posX:42, posY:42, fontSize:80, color:"#000", fontWeight:"bold", fontFamily:"serif", shadow:true };
-    setLayersByScreen(prev => { const c = [...prev]; c[idx] = [...(c[idx] || []), b, p]; return c; });
-    setActiveLayerId(p.id);
   };
 
   const handleCustomImageUpload = async (e: ChangeEvent<HTMLInputElement>, idx: number) => {
@@ -300,6 +321,7 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       const img = createImageLayer(url);
+      img.type = "logo";
       setLayersByScreen(prev => { const c = [...prev]; c[idx] = [...(c[idx] || []), img]; return c; });
       setActiveLayerId(img.id);
     } catch (err) { console.error(err); } finally { setCustomImageLoading(false); }
@@ -307,7 +329,15 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
 
   const onSubmit = (e: React.FormEvent) => { e.preventDefault(); handleImg(e, layersByScreen); };
   const activeLayers = layersByScreen[activeScreenIndex] || [];
-  let validProducts = (products || []).filter(p => galleryCategory === 'todas' || p.category === galleryCategory);
+  const hasLogo = activeLayers.some(l => l.type === 'logo');
+  const hasPriceImage = activeLayers.some(l => l.fieldKey === 'precio');
+  
+  let validProducts = (products || []).filter(p => {
+     if (activeGalleryType === 'precio') return p.category === 'precio';
+     if (galleryCategory !== 'todas') return p.category === galleryCategory;
+     if (categorySlug && categorySlug !== 'general') return p.category === categorySlug;
+     return p.category !== 'precio' && p.category !== 'linea';
+  });
 
   const renderTabs = () => {
     if (formData.destType !== 'tv' || screensCount <= 1) return null;
@@ -346,100 +376,54 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
         <div className="flex flex-col lg:flex-row flex-1 bg-[#fdfdfc] relative">
           
           {/* TOOLBAR IZQUIERDO: Estilo Studio */}
-          <div className="w-full lg:w-[100px] bg-white border-r border-slate-100 p-3 flex lg:flex-col gap-3 items-center shrink-0 shadow-sm z-30">
-             <button type="button" onClick={() => addCustomLayer(activeScreenIndex)} className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 transition-all group">
+          <div className="w-full lg:w-[100px] bg-white border-r border-slate-100 p-3 flex lg:flex-col gap-3 items-center shrink-0 shadow-sm z-30 overflow-y-auto hide-scrollbar">
+             <button type="button" onClick={() => setActiveRightPanel('TEXTS_LIST')} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'TEXTS_LIST' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'}`}>
                 <span className="text-xl group-hover:scale-110 transition-transform">A</span>
                 <span className="text-[9px] font-black uppercase">Texto</span>
              </button>
-             <button type="button" onClick={() => setActiveRightPanel('GALLERY')} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'GALLERY' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600'}`}>
+             <button type="button" onClick={() => { setActiveRightPanel('GALLERY'); setActiveGalleryType('producto'); }} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'GALLERY' && activeGalleryType === 'producto' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600'}`}>
                 <span className="text-xl group-hover:scale-110 transition-transform">🍔</span>
-                <span className="text-[9px] font-black uppercase">Pngs</span>
+                <span className="text-[9px] font-black uppercase">Productos</span>
              </button>
-             <button type="button" onClick={() => addPriceLayer(activeScreenIndex)} className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600 transition-all group">
+             <button type="button" onClick={() => { if(hasPriceImage) { setActiveRightPanel('GALLERY'); setActiveGalleryType('precio'); } }} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${!hasPriceImage ? 'opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-400 grayscale' : (activeRightPanel === 'GALLERY' && activeGalleryType === 'precio' ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600')}`} title={!hasPriceImage ? "La plantilla no tiene etiqueta de precio" : "Cambiar precio"}>
                 <span className="text-xl group-hover:scale-110 transition-transform">💲</span>
                 <span className="text-[9px] font-black uppercase">Precio</span>
              </button>
-             <label className="w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-slate-800 text-white hover:bg-black cursor-pointer transition-all mt-auto shadow-lg hover:-translate-y-1">
+             <button type="button" onClick={() => { if (templateSupportsMenu) handleMenuChange(activeScreenIndex, { ...activeMenu, isMenuMode: !activeMenu.isMenuMode }) }} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${!templateSupportsMenu ? 'opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-400 grayscale' : (activeMenu.isMenuMode ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600')}`} title={!templateSupportsMenu ? "Esta plantilla no tiene diseño de menú configurado" : "Activar/Desactivar Menú"}>
+                <span className={`text-xl ${templateSupportsMenu && 'group-hover:scale-110'} transition-transform`}>📋</span>
+                <span className="text-[9px] font-black uppercase">Menú</span>
+             </button>
+             <button type="button" onClick={() => setActiveRightPanel('LAYERS_LIST')} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'LAYERS_LIST' ? 'bg-purple-50 border-purple-500 text-purple-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600'}`} title="Posiciones y Capas">
+                <span className={`text-xl group-hover:scale-110 transition-transform`}>📑</span>
+                <span className="text-[9px] font-black uppercase">Capas</span>
+             </button>
+             <label className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl transition-all mt-auto shadow-lg ${hasLogo ? 'bg-slate-100 text-slate-400 opacity-60 cursor-not-allowed grayscale' : 'bg-slate-800 text-white hover:bg-black cursor-pointer hover:-translate-y-1'}`}>
                 <span className="text-xl">{customImageLoading ? '⌛' : '☁️'}</span>
-                <span className="text-[9px] font-black uppercase">Subir</span>
-                <input type="file" accept="image/*" className="hidden" onChange={e => handleCustomImageUpload(e, activeScreenIndex)} disabled={customImageLoading} />
+                <span className="text-[9px] font-black uppercase text-center leading-tight tracking-wider">Subir<br/>Logo</span>
+                <input type="file" accept="image/*" className="hidden" onChange={e => { if(!hasLogo) handleCustomImageUpload(e, activeScreenIndex) }} disabled={customImageLoading || hasLogo} />
              </label>
           </div>
 
-          {/* ÁREA CENTRAL: Lienzo */}
-          <div className="flex-1 p-8 lg:p-12 bg-[#f8f8f7] flex flex-col items-center justify-center relative group/canvas">
-             <div className="flex items-center gap-3 mb-6 bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-slate-100 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
-                <button type="button" onClick={() => handleMenuChange(activeScreenIndex, { ...activeMenu, isMenuMode: !activeMenu.isMenuMode })} className={`text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-lg transition-all ${activeMenu.isMenuMode ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:bg-slate-100'}`}>
-                   {activeMenu.isMenuMode ? '✓ Menú Lista Activo' : '📋 Activar Menú Lista'}
-                </button>
-             </div>
-
-             <div className={`w-full max-w-4xl bg-black rounded-[48px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center border-[12px] border-white relative transition-all duration-700 ${formData.formato === 'post' ? 'aspect-square' : (formData.formato === 'tv_h' ? 'aspect-[16/9]' : 'min-h-[600px]')}`}>
-                {previewUrl ? (
-                   <TextLayerEditor 
-                     imageUrl={previewUrl} 
-                     layers={layersByScreen[activeScreenIndex] || []} 
-                     onLayersChange={(newLayers) => { setLayersByScreen(prev => { const c = [...prev]; c[activeScreenIndex] = newLayers; return c; }); }}
-                     activeLayerId={activeLayerId} 
-                     onSetActiveLayer={(id) => setActiveLayerId(id)} 
-                     formato={formData.formato} 
-                     menuData={activeMenu}
-                     onMenuChange={(d) => handleMenuChange(activeScreenIndex, d)}
-                     templateColors={currentScreenLayoutObj?.colors}
-                     templateFonts={currentScreenLayoutObj?.fonts}
-                     onImageClick={() => setActiveRightPanel('GALLERY')}
-                     customFontsList={customFonts?.map(f => f.name)}
-                   />
-                ) : (
-                   <div className="p-20 text-slate-400 font-bold italic">Selecciona un formato válido</div>
-                )}
-                
-                {(!userDoc || (userDoc?.generationCount || 0) >= (userDoc?.generationLimit || 0)) && userDoc?.role !== "admin" && (
-                   <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center overflow-hidden rotate-[-30deg]">
-                      <span className="text-white text-[100px] font-black opacity-10">DIGITALBITE</span>
-                   </div>
-                )}
-             </div>
-
-             {activeMenu.isMenuMode && (
-                <div className="w-full max-w-4xl mt-10 animate-in slide-in-from-top-4 duration-500">
-                   <MenuListEditor menuData={activeMenu} onChange={d => handleMenuChange(activeScreenIndex, d)} onOpenProduct={() => setActiveRightPanel('GALLERY')} formato={formData.formato} />
-                </div>
-             )}
-          </div>
-
-          {/* PANEL DERECHO: Editor / Galería */}
-          <div className="w-full lg:w-[380px] bg-white border-l border-slate-100 flex flex-col shadow-[-20px_0_50px_rgba(0,0,0,0.02)] z-20">
+          {/* PANEL DERECHO: Editor / Galería (AHORA EN EL CENTRO) */}
+          <div className="w-full lg:w-[380px] bg-white border-r border-slate-100 flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.02)] z-20">
              <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between shrink-0">
                 <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-800">
-                   {activeRightPanel === 'GALLERY' ? '📦 Galería PNG' : '⚙️ Propiedades'}
+                   {activeRightPanel === 'GALLERY' ? '📦 Galería PNG' : (activeRightPanel === 'TEXTS_LIST' ? '📝 Textos' : activeRightPanel === 'LAYERS_LIST' ? '📑 Capas' : '⚙️ Propiedades')}
                 </h3>
-                {activeRightPanel === 'GALLERY' && (
-                   <button type="button" onClick={() => setActiveRightPanel('PROPERTIES')} className="text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-md transition-all">TERMINAR</button>
-                )}
+                <div className="flex items-center gap-2">
+                   {activeRightPanel !== 'PROPERTIES' && (
+                      <button type="button" onClick={() => setActiveRightPanel('PROPERTIES')} className="text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-md transition-all">TERMINAR</button>
+                   )}
+                   {activeRightPanel === 'PROPERTIES' && activeLayers.find(l => l.id === activeLayerId) && ['text', 'price', 'social'].includes(activeLayers.find(l => l.id === activeLayerId)?.type || '') && (
+                      <button type="button" onClick={() => { setActiveLayerId(null); setActiveRightPanel('TEXTS_LIST'); }} className="text-[10px] font-black text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-md transition-all">← VOLVER</button>
+                   )}
+                </div>
              </div>
 
              <div className="flex-1 overflow-y-auto p-6 pb-32 custom-scrollbar">
                 {activeRightPanel === 'GALLERY' ? (
                    <div className="flex flex-col gap-6">
-                      <label className={`w-full py-5 rounded-3xl border-2 border-dashed border-slate-100 hover:border-indigo-300 hover:bg-indigo-50 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${isUploadingProduct ? 'animate-pulse opacity-50' : ''}`}>
-                         <span className="text-2xl">{isUploadingProduct ? '⏳' : '📥'}</span>
-                         <span className="text-[10px] font-black uppercase text-indigo-500">{isUploadingProduct ? 'Procesando...' : 'Subir PNG a Galería'}</span>
-                         <input type="file" accept="image/png" className="hidden" onChange={async (e) => {
-                            const f = e.target.files?.[0]; if(!f) return;
-                            setIsUploadingProduct(true);
-                            try {
-                               const r = ref(storage, `products/${Date.now()}_${f.name}`);
-                               await uploadBytes(r, f);
-                               const u = await getDownloadURL(r);
-                               const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
-                               await addDoc(collection(db, "products"), { name: f.name.split('.')[0], imageUrl: u, category: 'general', createdAt: serverTimestamp() });
-                               setPendingProductToAdd(u);
-                            } catch(err) { alert("Error"); } finally { setIsUploadingProduct(false); }
-                         }} />
-                      </label>
-
-                      <div className="grid grid-cols-2 gap-4">
+                       <div className="grid grid-cols-2 gap-4">
                          {validProducts.map(p => (
                             <button type="button" key={p.id} onClick={() => setPendingProductToAdd(p.imageUrl)} className="group relative aspect-square bg-slate-50 rounded-[32px] border border-slate-100 p-4 flex items-center justify-center hover:bg-white hover:border-indigo-400 hover:shadow-xl transition-all overflow-hidden pattern-dots">
                                <img src={p.imageUrl} className="max-w-full max-h-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
@@ -450,17 +434,105 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
                          ))}
                       </div>
                    </div>
-                ) : (
+                 ) : activeRightPanel === 'LAYERS_LIST' ? (
+                    <div className="flex flex-col gap-3 animate-in fade-in duration-300">
+                       <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide text-center">Organizador de Capas</p>
+                       <p className="text-[10px] text-slate-400 text-center mb-4 leading-tight px-4">Ordenadas de Frente (arriba) hacia Atrás (abajo).</p>
+                       
+                       {activeMenu.isMenuMode && (
+                           <div className={`w-full p-3 bg-white border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 transition-all cursor-pointer shadow-sm`} onClick={() => setActiveRightPanel('PROPERTIES')}>
+                               <div className="flex items-center gap-3 overflow-hidden">
+                                   <span className="text-xl shrink-0 opacity-80 backdrop-blur-sm bg-emerald-50 p-2 rounded-xl text-emerald-600">📋</span>
+                                   <div className="flex flex-col truncate">
+                                       <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-0.5">Bloque Especial</span>
+                                       <span className="text-xs font-bold text-slate-800 truncate">Menú Dinámico</span>
+                                   </div>
+                               </div>
+                               <span className="text-[10px] font-black mr-2 text-emerald-400 uppercase">Nivel {activeMenu.customZ || 15}</span>
+                           </div>
+                       )}
+
+                       {activeLayers.length === 0 ? (
+                           <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-100 rounded-3xl text-center text-slate-400 text-xs font-bold mt-2">No hay capas insertadas.</div>
+                       ) : (
+                           [...activeLayers].reverse().map((l, indexReversed) => {
+                               const actualIdx = activeLayers.length - 1 - indexReversed;
+                               return (
+                               <div key={l.id} className={`w-full p-2.5 bg-white border rounded-2xl flex items-center justify-between gap-3 transition-all ${activeLayerId === l.id ? 'border-purple-400 shadow-md ring-2 ring-purple-50' : 'border-slate-200 hover:border-purple-200'} cursor-pointer`} onClick={() => { setActiveLayerId(l.id); setActiveRightPanel('PROPERTIES'); }}>
+                                   <div className="flex items-center gap-3 overflow-hidden">
+                                       <span className="text-base shrink-0 border border-slate-100 bg-slate-50 w-9 h-9 flex items-center justify-center rounded-[10px]">
+                                           {l.type === 'image' ? (l.fieldKey === 'precio' ? '💲' : '🍔') : l.type === 'logo' ? '☁️' : l.type === 'badge' ? '🏷️' : 'A'}
+                                       </span>
+                                       <div className="flex flex-col truncate">
+                                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Nivel {10 + actualIdx} • {l.type === 'image' ? (l.fieldKey === 'precio' ? 'Precio' : 'Producto') : l.type === 'logo' ? 'Logo' : l.type === 'badge' ? 'Badge' : 'Texto'}</span>
+                                           <span className="text-xs font-bold text-slate-700 truncate">{l.type === 'image' || l.type === 'logo' || l.type === 'badge' ? '(Capa Visual)' : l.text || '(Vacío)'}</span>
+                                       </div>
+                                   </div>
+                                   <div className="flex items-center gap-0.5 shrink-0 bg-slate-50 p-0.5 rounded-lg border border-slate-100">
+                                       <button type="button" 
+                                           disabled={actualIdx === activeLayers.length - 1} 
+                                           onClick={(e) => {
+                                               e.stopPropagation();
+                                               if (actualIdx < activeLayers.length - 1) {
+                                                   const newL = [...activeLayers];
+                                                   [newL[actualIdx], newL[actualIdx + 1]] = [newL[actualIdx + 1], newL[actualIdx]];
+                                                   setLayersByScreen(prev => { const c = [...prev]; c[activeScreenIndex] = newL; return c; });
+                                               }
+                                           }}
+                                           className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-purple-600 hover:bg-white rounded-md disabled:opacity-20 transition-all hover:shadow-sm">
+                                           <span className="text-[10px]">▲</span>
+                                       </button>
+                                       <button type="button" 
+                                           disabled={actualIdx === 0} 
+                                           onClick={(e) => {
+                                               e.stopPropagation();
+                                               if (actualIdx > 0) {
+                                                   const newL = [...activeLayers];
+                                                   [newL[actualIdx - 1], newL[actualIdx]] = [newL[actualIdx], newL[actualIdx - 1]];
+                                                   setLayersByScreen(prev => { const c = [...prev]; c[activeScreenIndex] = newL; return c; });
+                                               }
+                                           }}
+                                           className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-purple-600 hover:bg-white rounded-md disabled:opacity-20 transition-all hover:shadow-sm">
+                                           <span className="text-[10px]">▼</span>
+                                       </button>
+                                   </div>
+                               </div>
+                               );
+                           })
+                       )}
+                    </div>
+                 ) : activeRightPanel === 'TEXTS_LIST' ? (
+                    <div className="flex flex-col gap-3 animate-in fade-in duration-300">
+                       <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2 text-center">Selecciona un elemento para editar</p>
+                       {activeLayers.filter(l => l.type === 'text' || l.type === 'price' || l.type === 'social').length === 0 ? (
+                           <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-100 rounded-3xl text-center text-slate-400 text-xs font-bold">No hay textos insertados en esta plantilla.</div>
+                       ) : (
+                           activeLayers.filter(l => l.type === 'text' || l.type === 'price' || l.type === 'social').map(l => (
+                               <button key={l.id} type="button" onClick={() => { setActiveLayerId(l.id); setActiveRightPanel('PROPERTIES'); }} className="text-left w-full p-4 bg-white border border-slate-200 rounded-3xl hover:border-rose-400 hover:shadow-lg transition-all group relative overflow-hidden hover:-translate-y-0.5">
+                                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-4xl">✒️</div>
+                                   <span className="block text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1.5">{l.type === 'price' ? 'Precio' : (l.type === 'social' ? 'Red Social' : 'Texto Libre')}</span>
+                                   <span className="block text-sm font-bold text-slate-800 line-clamp-2 leading-snug drop-shadow-sm" style={{ fontFamily: l.fontFamily || 'sans-serif' }}>{l.text || '(Vacío)'}</span>
+                               </button>
+                           ))
+                       )}
+                    </div>
+                 ) : (
                    <div className="animate-in fade-in duration-300">
                       {activeLayerId ? (
                          <ActiveLayerPropertiesPanel 
                             layers={activeLayers}
                             onLayersChange={ns => { const c = [...layersByScreen]; c[activeScreenIndex] = ns; setLayersByScreen(c); }}
                             activeLayerId={activeLayerId}
-                            onSetActiveLayer={setActiveLayerId}
+                            onSetActiveLayer={(id) => {
+                                const currentLayer = activeLayers.find(l => l.id === activeLayerId);
+                                setActiveLayerId(id);
+                                if (id === null && currentLayer && ['text', 'price', 'social'].includes(currentLayer.type)) {
+                                    setActiveRightPanel('TEXTS_LIST');
+                                }
+                            }}
                             templateColors={currentScreenLayoutObj?.colors}
                             templateFonts={currentScreenLayoutObj?.fonts}
-                            customFontsList={customFonts?.map(f => f.name)}
+                            customFonts={customFonts}
                          />
                       ) : (
                          <div className="py-20 text-center opacity-30 px-6">
@@ -498,6 +570,66 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
                 )}
              </div>
           </div>
+
+          {/* ÁREA CENTRAL: Lienzo (AHORA A LA DERECHA) */}
+          <div className="flex-1 p-8 lg:p-12 lg:pt-6 bg-[#f8f8f7] flex flex-col items-center justify-start relative group/canvas overflow-y-auto">
+
+             <div className={`w-full max-w-4xl bg-black rounded-[48px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center border-[12px] border-white relative transition-all duration-700 ${formData.formato === 'post' ? 'aspect-square' : (formData.formato === 'tv_h' ? 'aspect-[16/9]' : 'min-h-[600px]')}`}>
+                {previewUrl ? (
+                   <TextLayerEditor 
+                     imageUrl={previewUrl} 
+                     layers={layersByScreen[activeScreenIndex] || []} 
+                     onLayersChange={(newLayers) => { setLayersByScreen(prev => { const c = [...prev]; c[activeScreenIndex] = newLayers; return c; }); }}
+                     activeLayerId={activeLayerId} 
+                     onSetActiveLayer={(id) => {
+                         setActiveLayerId(id);
+                         if (id) {
+                             const layer = layersByScreen[activeScreenIndex]?.find(l => l.id === id);
+                             if (layer && layer.type !== 'image') {
+                                 setActiveRightPanel('PROPERTIES');
+                             } else if (layer && layer.type === 'image') {
+                                 if (layer.fieldKey === 'precio') setActiveGalleryType('precio');
+                                 else setActiveGalleryType('producto');
+                                 setActiveRightPanel('GALLERY');
+                             }
+                         } else {
+                             setActiveRightPanel('PROPERTIES');
+                         }
+                     }} 
+                     formato={formData.formato} 
+                     menuData={activeMenu}
+                     onMenuChange={(d) => handleMenuChange(activeScreenIndex, d)}
+                     templateColors={currentScreenLayoutObj?.colors}
+                     templateFonts={currentScreenLayoutObj?.fonts}
+                     onImageClick={(layerId) => {
+                         const layer = layersByScreen[activeScreenIndex]?.find(l => l.id === layerId);
+                         if (layer?.fieldKey === 'precio') {
+                             setActiveGalleryType('precio');
+                         } else {
+                             setActiveGalleryType('producto');
+                         }
+                         setActiveRightPanel('GALLERY');
+                     }}
+                     customFontsList={customFonts?.map(f => f.name)}
+                   />
+                ) : (
+                   <div className="p-20 text-slate-400 font-bold italic">Selecciona un formato válido</div>
+                )}
+                
+                {(!userDoc || (userDoc?.generationCount || 0) >= (userDoc?.generationLimit || 0)) && userDoc?.role !== "admin" && (
+                   <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center overflow-hidden rotate-[-30deg]">
+                      <span className="text-white text-[100px] font-black opacity-10">DIGITALBITE</span>
+                   </div>
+                )}
+             </div>
+
+             {activeMenu.isMenuMode && (
+                <div className="w-full max-w-4xl mt-10 animate-in slide-in-from-top-4 duration-500">
+                   <MenuListEditor menuData={activeMenu} onChange={d => handleMenuChange(activeScreenIndex, d)} onOpenProduct={() => setActiveRightPanel('GALLERY')} formato={formData.formato} />
+                </div>
+             )}
+          </div>
+
         </div>
       </form>
 

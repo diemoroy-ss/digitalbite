@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { auth, db } from "../../lib/firebase";
 import { collection, query, where, getDocs, orderBy, addDoc, updateDoc, doc, increment, deleteDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   // ----- NAVIGATION & VIEW MODE -----
-  const [activeTab, setActiveTab] = useState<"list" | "rrss" | "tv" | "ia" | "proximamente">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "rrss" | "tv" | "ia" | "proximamente" | "cuota">("list");
   const [isLienzosMenuOpen, setIsLienzosMenuOpen] = useState(true);
 
   // ----- DB DATA (Templates & Categories) -----
@@ -62,6 +62,64 @@ export default function DashboardPage() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [renderingIndex, setRenderingIndex] = useState<number>(0);
   const [loadingImg, setLoadingImg] = useState(false);
+
+  // ----- MIS DISEÑOS FILTERS -----
+  const [filterFormat, setFilterFormat] = useState<string>("all");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+
+  const displayedRenders = useMemo(() => {
+    let result = [...renders];
+    
+    // Filter
+    if (filterFormat !== "all") {
+       result = result.filter(r => {
+          if (filterFormat === "rrss") return r.destType === 'rrss' || r.formato === 'post' || r.formato === 'story' || r.formato === 'reel';
+          if (filterFormat === "tv") return r.destType === 'tv' || r.formato === 'tv_v' || r.formato === 'tv_h';
+          if (filterFormat === "historia") return r.formato === 'story';
+          if (filterFormat === "post") return r.formato === 'post';
+          if (filterFormat === "reel") return r.formato === 'reel';
+          return true;
+       });
+    }
+    
+    // Sort
+    if (sortOrder === "asc") {
+       result = result.reverse(); // Since original is desc
+    }
+    
+    return result;
+  }, [renders, filterFormat, sortOrder]);
+
+  // ----- SEND MEDIA MODAL -----
+  const [sendModalRender, setSendModalRender] = useState<any>(null);
+  const [sendMethod, setSendMethod] = useState<'whatsapp' | 'email'>('whatsapp');
+  const [sendDestination, setSendDestination] = useState("");
+  const [sendMessage, setSendMessage] = useState("");
+  const [generatingCopy, setGeneratingCopy] = useState(false);
+
+  const openSendModal = (render: any) => {
+    setSendModalRender(render);
+    setSendMethod('whatsapp');
+    setSendDestination(userDoc?.whatsapp || "");
+    setSendMessage("");
+  };
+
+  const handleGenerateCopy = async () => {
+     if (!sendModalRender) return;
+     setGeneratingCopy(true);
+     try {
+       const prompt = `Escribe un breve y atractivo copy de venta publicitario (max 2 lineas, listo para redes o whatsapp) para acompañar una imagen promocional de: ${sendModalRender.titulo}. Usa emojis.`;
+       const res = await fetch("/api/gemini", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
+       const data = await res.json();
+       if (res.ok) setSendMessage(data.text);
+       else alert("Error: " + data.error);
+     } catch (err) {
+       console.error(err);
+       alert("Error conectando con la IA");
+     } finally {
+       setGeneratingCopy(false);
+     }
+  };
 
   // ----- ONBOARDING & HELP -----
   const [runTour, setRunTour] = useState(false);
@@ -295,7 +353,7 @@ export default function DashboardPage() {
       const payload = { tipo: "video", codigoPedido: renderObj.id, layoutId, categoria, ...renderObj };
       
       const isTv = renderObj.destType === 'tv' || renderObj.formato?.includes('tv');
-      const webhookUrl = isTv ? "https://n8n.digitalbite.app/webhook/generador-gastronomico-video-tv" : "https://n8n.digitalbite.app/webhook/generador-gastronomico";
+      const webhookUrl = isTv ? "https://n8n.santisoft.cl/webhook/generador-gastronomico-video-tv" : "https://n8n.santisoft.cl/webhook/generador-gastronomico";
 
       const res = await fetch(webhookUrl, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
@@ -311,17 +369,20 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSendMedia = async (renderObj: any) => {
-    if (!renderObj) return;
-    setLoadingSendId(renderObj.id);
+  const handleSendMediaAction = async () => {
+    if (!sendModalRender) return;
+    setLoadingSendId(sendModalRender.id);
 
     try {
       const payload = {
         tipo: "enviar_media",
-        ...renderObj,
+        metodoEnvio: sendMethod,
+        destinoEnvio: sendDestination,
+        mensajeEnvio: sendMessage,
+        ...sendModalRender,
         usuarioContacto: {
-          whatsapp: userDoc?.whatsapp || "",
-          contactoEmail: userDoc?.contactoEmail || "",
+          whatsapp: sendMethod === 'whatsapp' ? sendDestination : (userDoc?.whatsapp || ""),
+          contactoEmail: sendMethod === 'email' ? sendDestination : (userDoc?.contactoEmail || ""),
           nombre: userDoc?.name || auth.currentUser?.email || "",
           sitioWeb: userDoc?.sitioWeb || "",
           instagram: userDoc?.instagram || "",
@@ -329,12 +390,13 @@ export default function DashboardPage() {
         }
       };
 
-      const res = await fetch("https://n8n.digitalbite.app/webhook/generador-gastronomico-enviar", {
+      const res = await fetch("https://n8n.santisoft.cl/webhook/generador-gastronomico-enviar", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error("Error en webhook de envío");
 
-      alert("¡Enviado! Hemos enviado el archivo a tus datos de contacto registrados.");
+      alert(`¡Enviado! El contenido fue enviado por ${sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}.`);
+      setSendModalRender(null);
     } catch (err) {
       console.error(err); alert("Error al intentar enviar el contenido.");
     } finally {
@@ -392,7 +454,7 @@ export default function DashboardPage() {
            setUserDoc((prev: any) => prev ? { ...prev, generationCount: (prev.generationCount || 0) + 1 } : prev);
         }
         const targetUrl = `https://digitalbite.app/render?id=${docRef.id}`;
-        urls.push(`https://butterfly.digitalbite.app/link-previews/v1?url=${encodeURIComponent(targetUrl)}`);
+        urls.push(`https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(targetUrl)}`);
         
         const newRender = { id: docRef.id, ...formData, fondoUrl: screenFondoUrl, textLayers: layersByScreen[i], screenIndex: i, screensCount: layersByScreen.length, userId: auth.currentUser?.uid, createdAt: { toDate: () => new Date() } };
         generatedRenders.push(newRender);
@@ -471,62 +533,48 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 relative flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50 relative flex flex-col">
       <div className="absolute inset-0 z-0 pointer-events-none opacity-30 bg-gradient-to-br from-indigo-50 to-rose-50" />
 
-      {/* ----- DESKTOP SIDEBAR ----- */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 z-10 flex-col shrink-0 h-screen sticky top-0">
-        <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-xl shadow-md" aria-hidden="true">🖌️</div>
-          <div><span className="font-black text-slate-800 leading-tight block">DigitalBite App</span><p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Workspace</p></div>
-        </div>
-        
-        <nav className="flex-1 p-4 space-y-2 relative overflow-y-auto custom-scrollbar" aria-label="Navegación principal">
-          {/* LIENZOS ACCORDION */}
-          <div className="mb-2">
-            <button onClick={() => setIsLienzosMenuOpen(!isLienzosMenuOpen)}
-              aria-expanded={isLienzosMenuOpen}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-100 transition-colors">
-               <div className="flex items-center gap-3"><span aria-hidden="true">🍽️</span> Lienzos</div>
-               <span className={`text-slate-400 transition-transform ${isLienzosMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true">▼</span>
-            </button>
-
-            {isLienzosMenuOpen && (
-              <div className="mt-1 flex flex-col gap-1 pl-11 pr-2 relative">
-                <div className="absolute left-[30px] top-0 bottom-4 border-l-2 border-slate-100" aria-hidden="true" />
-                
-                <button onClick={() => handleSidebarClick("list")}
-                  aria-current={activeTab === 'list' ? 'page' : undefined}
-                  className={`w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold transition-all relative z-10 ${activeTab === 'list' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
-                  Mis Diseños
-                </button>
-                <button onClick={() => handleSidebarClick("rrss", { destType: 'rrss', formato: 'story' })}
-                  aria-current={activeTab === 'rrss' ? 'page' : undefined}
-                  className={`w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold transition-all relative z-10 ${activeTab === 'rrss' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
-                  📱 Crear Redes Sociales
-                </button>
-                <button onClick={() => handleSidebarClick("tv", { destType: 'tv', formato: 'tv_v' })}
-                  aria-current={activeTab === 'tv' ? 'page' : undefined}
-                  className={`w-full text-left py-2 px-3 rounded-lg text-[13px] font-bold transition-all relative z-10 ${activeTab === 'tv' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
-                  📺 Crear Menu Wall
-                </button>
-              </div>
-            )}
+      {/* ----- DESKTOP TOP NAV ----- */}
+      <header className="hidden md:flex w-full bg-white border-b border-slate-200 z-[60] h-20 px-6 items-center justify-between sticky top-0 shadow-sm shrink-0">
+        <div className="flex items-center gap-10">
+          <div className="flex items-center gap-3 select-none">
+            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-xl shadow-md" aria-hidden="true">🖌️</div>
+            <div>
+              <span className="font-black text-slate-800 leading-tight block">DigitalBite App</span>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Workspace</p>
+            </div>
           </div>
-
-          <button onClick={() => handleSidebarClick("ia")}
-            aria-current={activeTab === 'ia' ? 'page' : undefined}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'ia' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}>
-            <span aria-hidden="true">✨</span> Asistente IA
-          </button>
           
-          <button onClick={() => handleSidebarClick("proximamente")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'proximamente' ? 'bg-slate-100 text-slate-400' : 'text-slate-400 opacity-60'}`}>
-            <span aria-hidden="true">🚗</span> Automotriz <span className="text-[9px] bg-slate-200 px-1.5 py-0.5 rounded-md ml-auto">Pronto</span>
-          </button>
-        </nav>
+          <nav className="flex items-center gap-2" aria-label="Navegación principal">
+            <button onClick={() => handleSidebarClick("list")}
+              aria-current={activeTab === 'list' ? 'page' : undefined}
+              className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all ${activeTab === 'list' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+              Mis Diseños
+            </button>
+            <button onClick={() => handleSidebarClick("rrss", { destType: 'rrss', formato: 'story' })}
+              aria-current={activeTab === 'rrss' ? 'page' : undefined}
+              className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all ${activeTab === 'rrss' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+              📱 Crear Redes Sociales
+            </button>
+            <button onClick={() => handleSidebarClick("tv", { destType: 'tv', formato: 'tv_v' })}
+              aria-current={activeTab === 'tv' ? 'page' : undefined}
+              className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all ${activeTab === 'tv' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+              📺 Crear Menu Wall
+            </button>
+            <button onClick={() => handleSidebarClick("cuota")}
+              aria-current={activeTab === 'cuota' ? 'page' : undefined}
+              className={`px-4 py-2 rounded-xl text-[13px] font-bold transition-all ${activeTab === 'cuota' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}>
+              📊 Uso y Cuota
+            </button>
+          </nav>
+        </div>
 
-      </aside>
+        <div className="flex items-center gap-4 hidden md:block">
+           <ProfileMenu user={auth.currentUser} userDoc={userDoc} />
+        </div>
+      </header>
 
       {/* ----- MOBILE BOTTOM NAV ----- */}
       <nav aria-label="Navegación móvil" className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur border-t border-slate-200 flex safe-area-pb">
@@ -535,6 +583,7 @@ export default function DashboardPage() {
           { tab: 'rrss',  icon: '📱', label: 'Crear RRSS' },
           { tab: 'tv',    icon: '📺', label: 'TV Wall' },
           { tab: 'ia',    icon: '✨', label: 'IA' },
+          { tab: 'cuota', icon: '📊', label: 'Cuota' },
         ].map(item => (
           <button key={item.tab}
             onClick={() => item.tab === 'rrss'
@@ -552,13 +601,9 @@ export default function DashboardPage() {
       </nav>
 
       {/* ----- MAIN CONTENT ----- */}
-      <main className="flex-1 overflow-y-auto w-full z-10 min-h-screen relative bg-[#fafaf9]" role="main">
-        {/* User Profile Widget - Top Right */}
-        <div className="absolute top-6 right-6 md:top-8 md:right-8 z-[100] hidden md:block">
-           <ProfileMenu user={auth.currentUser} userDoc={userDoc} />
-        </div>
-        
-        <div className={`w-full p-4 md:p-6 md:pt-28 relative pb-36 md:pb-20`}>
+      <main className="flex-1 overflow-y-auto w-full z-10 min-h-[calc(100vh-80px)] relative bg-[#fafaf9]" role="main">
+        <div className={`w-full p-4 md:p-8 2xl:px-12 relative pb-36 md:pb-20 flex-col items-center flex`}>
+          <div className="w-full">
           
           {/* TAB: LIST VIEW */}
           {activeTab === "list" && (
@@ -575,13 +620,30 @@ export default function DashboardPage() {
                     </h1>
                     <p className="text-slate-500 mt-1">Administra tus diseños generados, conviértelos en videos y crea más.</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleSidebarClick("rrss", { destType: 'rrss', formato: 'story' })} className="inline-flex shrink-0 items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg transition-all hover:-translate-y-0.5 text-sm">
-                      <span aria-hidden="true">📱</span> Nueva Historia
-                    </button>
-                    <button onClick={() => handleSidebarClick("tv", { destType: 'tv', formato: 'tv_v' })} className="inline-flex shrink-0 items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 text-sm">
-                      <span aria-hidden="true">📺</span> Nuevo TV Wall
-                    </button>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select 
+                      value={filterFormat} 
+                      onChange={e => setFilterFormat(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm cursor-pointer hover:bg-slate-100 transition-colors"
+                      title="Filtrar por formato"
+                    >
+                      <option value="all">🎨 Todos los Formatos</option>
+                      <option value="rrss">📱 Redes Sociales (Todos)</option>
+                      <option value="tv">📺 Menú TV (Todos)</option>
+                      <option value="historia">📸 Historias (9:16)</option>
+                      <option value="post">🖼️ Posts Cuadrados (1:1)</option>
+                      <option value="reel">🎬 Reels / TikTok (Video 9:16)</option>
+                    </select>
+
+                    <select 
+                      value={sortOrder} 
+                      onChange={e => setSortOrder(e.target.value as "desc" | "asc")}
+                      className="bg-slate-50 border border-slate-200 text-slate-700 font-bold px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm cursor-pointer hover:bg-slate-100 transition-colors"
+                      title="Ordenar por fecha"
+                    >
+                      <option value="desc">⬇️ Del más reciente al más antiguo</option>
+                      <option value="asc">⬆️ Del más antiguo al más reciente</option>
+                    </select>
                   </div>
                 </div>
 
@@ -607,10 +669,10 @@ export default function DashboardPage() {
                      </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
-                    {renders.map(render => {
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mt-8">
+                    {displayedRenders.map(render => {
                         const targetUrl = `https://digitalbite.app/render?id=${render.id}`;
-                        const imageUrl = `https://butterfly.digitalbite.app/link-previews/v1?url=${encodeURIComponent(targetUrl)}`;
+                        const imageUrl = `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(targetUrl)}`;
                          const isHorizontal = render.formato === 'tv_h';
                          const isPost = render.formato === 'post';
                          const isVideo = render.formato?.includes('tv');
@@ -619,7 +681,7 @@ export default function DashboardPage() {
                          return (
                            <article key={render.id} aria-label={`Diseño: ${render.titulo || 'Sin título'}`} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 group flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                              <div className={`${renderAspect} bg-slate-100 relative overflow-hidden`}>
-                              <img src={imageUrl} alt={`Vista previa de ${render.titulo || 'diseño'}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" />
+                              <img src={imageUrl} alt={`Vista previa de ${render.titulo || 'diseño'}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" onError={(e) => { e.currentTarget.src = render.fondoUrl || "https://digitalbite.app/logo.png"; }} />
                               <div className="absolute top-3 left-3 flex gap-2">
                                   <span className="bg-indigo-600/90 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider">
                                     {isVideo ? '🎥 Render TV' : '📱 Render RRSS'}
@@ -654,9 +716,9 @@ export default function DashboardPage() {
                                </div>
                                
                                {(render.videoUrl || render.fondoUrl) && (
-                                   <button onClick={() => handleSendMedia(render)} disabled={loadingSendId === render.id} className="mt-2 flex items-center justify-center gap-1 w-full bg-indigo-50 hover:bg-indigo-100 disabled:bg-slate-50 border border-indigo-100 disabled:border-slate-100 text-indigo-700 disabled:text-slate-400 font-bold py-2 rounded-xl text-[11px] transition-colors">
+                                   <button onClick={() => openSendModal(render)} disabled={loadingSendId === render.id} className="mt-2 flex items-center justify-center gap-1 w-full bg-indigo-50 hover:bg-indigo-100 disabled:bg-slate-50 border border-indigo-100 disabled:border-slate-100 text-indigo-700 disabled:text-slate-400 font-bold py-2 rounded-xl text-[11px] transition-colors">
                                      {loadingSendId === render.id ? <div className="w-3 h-3 border-2 border-indigo-400 border-t-white rounded-full animate-spin"/> : <span aria-hidden="true">📤</span>} 
-                                     {loadingSendId === render.id ? 'Enviando...' : (render.videoUrl ? 'Enviar Video por WS/Email' : 'Enviar Imagen por WS/Email')}
+                                     {loadingSendId === render.id ? 'Cargando modal...' : (render.videoUrl ? 'Enviar Video por WS/Email' : 'Enviar Imagen por WS/Email')}
                                    </button>
                                )}
                             </div>
@@ -987,8 +1049,155 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* TAB: CUOTA */}
+          {activeTab === "cuota" && (
+             <section className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full max-w-4xl mx-auto" aria-label="Uso y Cuota">
+                <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
+                   <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3 mb-2">
+                       Uso y Cuota 📊
+                   </h1>
+                   <p className="text-slate-500 mb-8">Revisa el historial de uso de tu cuenta y evalúa un cambio de plan si estás cerca del límite.</p>
+
+                   {userDoc ? (() => {
+                      const limit = userDoc.plan?.creaciones_mes || userDoc.generationLimit || 0;
+                      const used = userDoc.generationCount || renders.length || 0;
+                      const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : (used > 0 ? 100 : 0);
+                      
+                      return (
+                        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
+                           <div className="flex justify-between items-end mb-4">
+                              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Cuota de Generación Mensual</span>
+                              <span className="text-2xl font-black text-indigo-600">{used} <span className="text-slate-400 text-lg">/ {limit === 0 ? 'Ilimitado' : limit}</span></span>
+                           </div>
+                           <div className="h-4 bg-slate-200 rounded-full overflow-hidden w-full relative shadow-inner">
+                              <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-700 transition-all duration-1000" style={{ width: `${pct}%` }} />
+                           </div>
+                           <div className="mt-3 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">{pct}% Utilizado</div>
+                        </div>
+                      )
+                   })() : null}
+                   
+                   <h2 className="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">Historial de Diseños Generados</h2>
+                   
+                   <div className="bg-white border flex flex-col border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                      <div className="grid grid-cols-4 bg-slate-50 p-4 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                         <div className="col-span-2">Diseño</div>
+                         <div className="text-center">Fecha de Creación</div>
+                         <div className="text-right">Ataque a Cuota</div>
+                      </div>
+                      
+                      <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto custom-scrollbar">
+                         {renders.map((r, i) => {
+                            const dateObj = r.createdAt?.toDate ? r.createdAt.toDate() : null;
+                            const dateStr = dateObj ? dateObj.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Desconocido';
+                            return (
+                              <div key={r.id || i} className="grid grid-cols-4 p-4 items-center hover:bg-slate-50 transition-colors">
+                                 <div className="col-span-2 flex items-center gap-3">
+                                   <div className="w-10 h-10 rounded-lg bg-slate-200 shrink-0 overflow-hidden border border-slate-200">
+                                     {r.fondoUrl ? (
+                                        <img src={r.fondoUrl} alt="thumb" className="w-full h-full object-cover" />
+                                     ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-lg">🖼️</div>
+                                     )}
+                                   </div>
+                                   <div className="flex flex-col">
+                                     <span className="text-sm font-bold text-slate-800 line-clamp-1">{r.titulo || 'Muestra de Diseño'}</span>
+                                     <span className="text-[10px] uppercase font-black text-slate-400 flex items-center gap-1">{r.formato?.includes('tv') ? '📺 TV WALL' : '📱 RRSS'}</span>
+                                   </div>
+                                 </div>
+                                 <div className="text-center text-xs font-bold text-slate-500 uppercase">{dateStr}</div>
+                                 <div className="text-right text-sm font-black text-slate-700 flex justify-end items-center gap-2">
+                                    <span className="bg-rose-100 text-rose-600 px-2.5 py-1 rounded-lg text-[10px] tracking-widest leading-none">-1 Cuota</span>
+                                 </div>
+                              </div>
+                            )
+                         })}
+                         
+                         {renders.length === 0 && (
+                            <div className="p-12 text-center text-slate-400 text-sm font-bold">Aún no has generado ningún diseño.</div>
+                         )}
+                      </div>
+                   </div>
+                </div>
+             </section>
+          )}
+
+          </div>
         </div>
       </main>
+
+      {/* ------ SEND MEDIA MODAL ------ */}
+      {sendModalRender && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-lg font-black text-slate-800">Compartir Diseño</h3>
+              <button title="Cerrar" onClick={() => setSendModalRender(null)} className="text-slate-400 hover:text-slate-600 bg-white shadow-sm border border-slate-100 hover:bg-slate-100 w-8 h-8 flex items-center justify-center rounded-xl transition-all">✖</button>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[70vh] custom-scrollbar">
+              {/* Thumbnail mini-preview */}
+              <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                 <div className="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden shrink-0 border border-slate-200">
+                    <img src={`https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.app/render?id=${sendModalRender.id}`)}`} alt="Miniatura" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = sendModalRender.fondoUrl || '/logo.png'; }} />
+                 </div>
+                 <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase text-indigo-500 tracking-widest leading-none mb-1">Adjunto HD Listo</span>
+                    <span className="text-sm font-bold text-slate-700 line-clamp-1">{sendModalRender.titulo || 'Muestra de Diseño'}</span>
+                 </div>
+              </div>
+
+              {/* Method Tabs */}
+              <div className="flex bg-slate-100 p-1.5 rounded-2xl shrink-0">
+                <button type="button" onClick={() => { setSendMethod('whatsapp'); setSendDestination(userDoc?.whatsapp || ""); }} className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all flex items-center justify-center gap-2 ${sendMethod === 'whatsapp' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <span className="text-lg">💬</span> WhatsApp
+                </button>
+                <button type="button" onClick={() => { setSendMethod('email'); setSendDestination(userDoc?.contactoEmail || ""); }} className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all flex items-center justify-center gap-2 ${sendMethod === 'email' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <span className="text-lg">📧</span> Correo Electrónico
+                </button>
+              </div>
+
+              {/* Destination Input */}
+              <div className="shrink-0">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{sendMethod === 'whatsapp' ? 'Número de WhatsApp Destino' : 'Dirección de Correo Destino'}</label>
+                <input 
+                  type={sendMethod === 'email' ? 'email' : 'tel'} 
+                  value={sendDestination} 
+                  onChange={e => setSendDestination(e.target.value)} 
+                  placeholder={sendMethod === 'whatsapp' ? '+56912345678' : 'ejemplo@tucorreo.com'}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-inner"
+                />
+              </div>
+
+              {/* Message / Copy */}
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Texto Acompañante (Opcional)</label>
+                   <button type="button" onClick={handleGenerateCopy} disabled={generatingCopy} className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50">
+                     {generatingCopy ? <span className="animate-spin inline-block border-2 border-indigo-400 border-t-transparent rounded-full w-3 h-3" /> : <span>✨</span>}
+                     {generatingCopy ? 'Pensando copy...' : 'Crear con IA'}
+                   </button>
+                </div>
+                <textarea 
+                  value={sendMessage} 
+                  onChange={e => setSendMessage(e.target.value)} 
+                  placeholder="Escribe el texto que acompañará a la foto o video..."
+                  rows={4}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all resize-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+               <button onClick={() => setSendModalRender(null)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors text-[13px]">Cancelar</button>
+               <button onClick={handleSendMediaAction} disabled={!sendDestination || !!loadingSendId} className={`px-6 py-2.5 rounded-xl font-black disabled:bg-opacity-50 text-white shadow-lg transition-all text-[13px] flex items-center gap-2 ${sendMethod === 'whatsapp' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30'}`}>
+                  {loadingSendId ? <span className="animate-spin inline-block border-2 border-white/50 border-t-white rounded-full w-4 h-4" /> : '🚀' }
+                  {loadingSendId ? 'Enviando...' : `Enviar por ${sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}`}
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODALS */}
       <ProductModal 

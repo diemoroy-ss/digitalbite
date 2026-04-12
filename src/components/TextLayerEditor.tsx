@@ -57,7 +57,7 @@ function useImageColors(imageUrl: string) {
       try {
         const c = document.createElement("canvas");
         c.width = 80; c.height = Math.round(80 * img.naturalHeight / img.naturalWidth);
-        const ctx = c.getContext("2d");
+        const ctx = c.getContext("2d", { willReadFrequently: true });
         if (!ctx) return;
         ctx.drawImage(img, 0, 0, c.width, c.height);
         const pts = [[0.15, 0.15], [0.85, 0.15], [0.5, 0.5], [0.15, 0.85], [0.85, 0.85]];
@@ -171,7 +171,7 @@ interface Props {
   activeLayerId: string | null;
   onSetActiveLayer: (id: string | null) => void;
   formato?: string;
-  menuData?: { isMenuMode: boolean; menuItems: {name: string, price: string}[], scale?: number, bgColor?: string, posX?: number, posY?: number, width?: number, bgOpacity?: number };
+  menuData?: { isMenuMode: boolean; menuItems: {name: string, price: string}[], scale?: number, bgColor?: string, posX?: number, posY?: number, width?: number, bgOpacity?: number, customZ?: number };
   onMenuChange?: (menu: any) => void;
   templateFonts?: string[];
   templateColors?: string[];
@@ -348,8 +348,8 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
                       topRight: true, bottomRight: true, bottomLeft: true, topLeft: true 
                     }}
                     disableDragging={!isActive}
+                    z={menuData.customZ !== undefined ? menuData.customZ : (isActive ? 30 : 15)}
                     style={{
-                       zIndex: isActive ? 30 : 15,
                        pointerEvents: "auto",
                        border: isActive ? "2px dashed #6366f1" : "1px solid transparent",
                        cursor: isActive ? "move" : "pointer",
@@ -377,7 +377,7 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
         })()}
 
         {/* Mapeo de Rnd para DRAG & DROP con mouse */}
-        {containerW > 0 && containerH > 0 && layers.map(layer => {
+        {containerW > 0 && containerH > 0 && layers.map((layer, idx) => {
           // Convertimos las posiciones base (que vienen en %) a pixeles para react-rnd
           // Si el layer no ahs sido movido libremente desde el código legacy, su centro estaba en posX/posY
           // Hacemos una aproximación para posicionar inicialmente.
@@ -443,32 +443,27 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
                 const newWidthPct = `${(newWidthPx / containerW) * 100}%`;
                 const newHeightPct = `${(newHeightPx / containerH) * 100}%`;
                 
-                // Si la capa es Texto Libre, Precio o Social intentaremos además escalar el Texto 
                 let addProps: any = {};
                 if (layer.type === "text" || layer.type === "price" || layer.type === "social") {
-                    // Calculo proporcional de font size basado en la nueva altura
                     addProps.fontSize = (newHeightPx / scale) * 0.7; 
                 } else {
-                    // Para imagenes y logos, su "fontSize" en el renderer final es el ancho base nativo devuelto
                     addProps.fontSize = (newWidthPx / scale);
                 }
                 upd(layer.id, { posX: newPx, posY: newPy, width: newWidthPct, height: newHeightPct, ...addProps });
               }}
-              enableResizing={isStrictTemplateMode ? false : {
+              enableResizing={isStrictTemplateMode || layer.type !== "logo" ? false : {
                   top:false, right:false, bottom:false, left:false, 
                   topRight: isActive,
                   bottomRight: isActive, 
                   bottomLeft: isActive, 
                   topLeft: isActive 
               }}
-              disableDragging={isStrictTemplateMode || !isActive}
+              disableDragging={isStrictTemplateMode || !isActive || layer.type !== "logo"}
               style={{
-                 zIndex: layer.type === "text" || layer.type === "price" || layer.type === "social" || layer.type === "badge" 
-                         ? (isActive ? 50 : 20) 
-                         : (isActive ? 15 : 10),
+                 zIndex: 10 + idx,
                  pointerEvents: "auto",
                  border: isActive ? (isStrictTemplateMode ? "2px solid #f43f5e" : "2px dashed #f43f5e") : (recentlyAddedId === layer.id ? "2px solid #6366f1" : "1px solid transparent"),
-                 cursor: isStrictTemplateMode ? "pointer" : (isActive ? "move" : "pointer"),
+                 cursor: isStrictTemplateMode || layer.type !== "logo" ? "pointer" : (isActive ? "move" : "pointer"),
                  boxShadow: recentlyAddedId === layer.id && !isActive ? "0 0 0 4px rgba(99,102,241,0.35)" : "none",
                  transition: "box-shadow 0.3s ease, border 0.3s ease",
               }}
@@ -489,7 +484,7 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
                  onFinishEdit={() => setEditingLayerId(null)}
                  onImageClick={(e?: any) => { e?.stopPropagation?.(); onSetActiveLayer(layer.id); if(onImageClick) { onImageClick(layer.id); } }}
               />
-              {isActive && !isStrictTemplateMode && (
+              {isActive && !isStrictTemplateMode && layer.type !== "image" && (
                   <button title="Borrar Capa" onClick={(e) => {
                       e.stopPropagation();
                       onLayersChange(layers.filter(l => l.id !== layer.id));
@@ -573,8 +568,20 @@ export function ActiveLayerPropertiesPanel({
 
            {/* TARJETA DE MENÚ (Fondo) */}
            <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm w-full">
-             <div className="flex items-center gap-2 mb-3">
+             <div className="flex items-center gap-2 mb-3 justify-between">
                 <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">Tarjeta y Fondo</span>
+                <div className="flex items-center">
+                  <button type="button" 
+                    onClick={() => updMenu({ customZ: Math.max(1, (menuData.customZ || 15) - 3) })} 
+                    className="text-[10px] font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-800 px-2.5 py-1.5 rounded-l-full transition-colors border border-slate-200 border-r-0" title="Enviar capa más atrás">
+                    {"↓"} Atrás
+                  </button>
+                  <button type="button" 
+                    onClick={() => updMenu({ customZ: Math.min(50, (menuData.customZ || 15) + 3) })} 
+                    className="text-[10px] font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-800 px-2.5 py-1.5 rounded-r-full transition-colors border border-slate-200" title="Traer capa al frente">
+                    {"↑"} Frente
+                  </button>
+                </div>
              </div>
              <div className="flex gap-4">
                  <div className="w-1/3">
@@ -672,9 +679,35 @@ export function ActiveLayerPropertiesPanel({
               <span className="text-xs font-bold text-rose-500 uppercase tracking-widest">Editar Capa</span>
               {active.fieldKey && <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{FIELD_LABELS[active.fieldKey]}</span>}
             </div>
-            {!active.fieldKey && (
-              <button type="button" onClick={() => del(active.id)} className="text-xs font-bold text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-full transition-colors">🗑 Eliminar</button>
-            )}
+            <div className="flex items-center">
+              <button type="button" 
+                onClick={() => {
+                  const idx = layers.findIndex(l => l.id === active.id);
+                  if (idx > 0) {
+                     const newL = [...layers];
+                     [newL[idx - 1], newL[idx]] = [newL[idx], newL[idx - 1]];
+                     onLayersChange(newL);
+                  }
+                }} 
+                className="text-[10px] font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-800 px-2.5 py-1.5 rounded-l-full transition-colors border border-slate-200 border-r-0" title="Enviar capa más atrás">
+                {"↓"} Atrás
+              </button>
+              <button type="button" 
+                onClick={() => {
+                  const idx = layers.findIndex(l => l.id === active.id);
+                  if (idx < layers.length - 1) {
+                     const newL = [...layers];
+                     [newL[idx], newL[idx + 1]] = [newL[idx + 1], newL[idx]];
+                     onLayersChange(newL);
+                  }
+                }} 
+                className={`text-[10px] font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-800 px-2.5 py-1.5 transition-colors border border-slate-200 ${!active.fieldKey ? 'border-r-0' : 'rounded-r-full'}`} title="Traer capa al frente">
+                {"↑"} Frente
+              </button>
+              {!active.fieldKey && (
+                <button type="button" onClick={() => del(active.id)} className="text-[10px] font-bold text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-r-full transition-colors border border-red-100">🗑</button>
+              )}
+            </div>
           </div>
           {!active.fieldKey && (
             <textarea className="w-full border border-slate-200 rounded-xl px-3 py-2 text-[13px] text-slate-800 resize-none focus:outline-none focus:border-rose-400 mb-3" rows={2}
@@ -756,11 +789,37 @@ export function ActiveLayerPropertiesPanel({
          <div className="bg-white border border-indigo-100 rounded-2xl p-4 shadow-sm w-full">
            <div className="flex items-center justify-between mb-0">
              <div className="flex items-center gap-2">
-               <span className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{active.type === "image" ? "Editar Imagen" : "Editar Logo"}</span>
+               <span className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{active.type === "image" ? (active.fieldKey === "precio" ? "Precio" : "Producto") : "Logo"}</span>
              </div>
-             {!active.fieldKey && (
-                <button type="button" onClick={() => del(active.id)} className="text-xs font-bold text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-full transition-colors">🗑 Eliminar</button>
-             )}
+             <div className="flex items-center">
+               <button type="button" 
+                 onClick={() => {
+                   const idx = layers.findIndex(l => l.id === active.id);
+                   if (idx > 0) {
+                      const newL = [...layers];
+                      [newL[idx - 1], newL[idx]] = [newL[idx], newL[idx - 1]];
+                      onLayersChange(newL);
+                   }
+                 }} 
+                 className="text-[10px] font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-800 px-2.5 py-1.5 rounded-l-full transition-colors border border-slate-200 border-r-0" title="Enviar capa más atrás">
+                 {"↓"} Atrás
+               </button>
+               <button type="button" 
+                 onClick={() => {
+                   const idx = layers.findIndex(l => l.id === active.id);
+                   if (idx < layers.length - 1) {
+                      const newL = [...layers];
+                      [newL[idx], newL[idx + 1]] = [newL[idx + 1], newL[idx]];
+                      onLayersChange(newL);
+                   }
+                 }} 
+                 className={`text-[10px] font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-800 px-2.5 py-1.5 transition-colors border border-slate-200 ${!active.fieldKey && active.type !== "image" ? 'border-r-0' : 'rounded-r-full'}`} title="Traer capa al frente">
+                 {"↑"} Frente
+               </button>
+               {!active.fieldKey && active.type !== "image" && (
+                  <button type="button" onClick={() => del(active.id)} className="text-[10px] font-bold text-red-400 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-r-full transition-colors border border-red-100">🗑</button>
+               )}
+             </div>
            </div>
          </div>
       )}

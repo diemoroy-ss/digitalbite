@@ -24,9 +24,18 @@ function parseFields(fields: Record<string, any>) {
 }
 
 async function fetchRender(id: string) {
-  const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/renders_temporales/${id}?key=${FIREBASE_API_KEY}`;
+  const urlTemp = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/renders_temporales/${id}?key=${FIREBASE_API_KEY}`;
+  const urlFinal = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/renders/${id}?key=${FIREBASE_API_KEY}`;
+  
   try {
-    const res = await fetch(url, { cache: "no-store" });
+    // Buscar en renders_temporales primero
+    let res = await fetch(urlTemp, { cache: "no-store" });
+    
+    // Si no está ahí (ej: viene de Mis Diseños), buscar en renders definitivos
+    if (!res.ok) {
+        res = await fetch(urlFinal, { cache: "no-store" });
+    }
+    
     if (!res.ok) return null;
     const json = await res.json();
     return json.fields ? parseFields(json.fields) : null;
@@ -142,7 +151,7 @@ export default async function RenderPage(props: {
   const hasLayers = layers.length > 0;
   const maxTextWidth = Math.round(W * 0.78); // 78% del ancho del canvas
 
-  const screenMenu = data.menusByScreen?.[data.screenIndex || 0] || { isMenuMode: false, menuItems: [] };
+  const screenMenu: any = data.menusByScreen?.[data.screenIndex || 0] || { isMenuMode: false, menuItems: [] };
 
   const FONTS_URL = "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Pacifico&family=Syne:wght@400;700;800&display=swap";
 
@@ -188,7 +197,7 @@ export default async function RenderPage(props: {
         {hasLayers && (
           <>
             {/* OJO: SE ELIMINÓ EL BLOQUE DEL LOGO FIJO QUE HABÍA AQUÍ PARA QUE SOLO RENDERICE EL DE LA CAPA */}
-            {layers.map(layer => {
+            {layers.map((layer, index) => {
               const isSocial = layer.type === "social";
               const isPrice = layer.type === "price";
               const isLogo = layer.type === "logo";
@@ -219,7 +228,7 @@ export default async function RenderPage(props: {
               }
 
               return (
-                <div key={layer.id} style={{ position: "absolute", left: `${layer.posX}%`, top: `${layer.posY}%`, transform: "translate(-50%,-50%)", zIndex: 10, width: layer.width, display: "flex", alignItems: "center", justifyContent: layer.textAlign === "center" ? "center" : layer.textAlign === "right" ? "flex-end" : "flex-start" }}>
+                <div key={layer.id} style={{ position: "absolute", left: `${layer.posX}%`, top: `${layer.posY}%`, transform: "translate(-50%,-50%)", zIndex: 10 + index, width: layer.width, display: "flex", alignItems: "center", justifyContent: layer.textAlign === "center" ? "center" : layer.textAlign === "right" ? "flex-end" : "flex-start" }}>
                   {isLogo ? (
                     <div style={{ background: "white", borderRadius: layer.fontSize * 0.12, padding: layer.fontSize * 0.08, boxShadow: "0 8px 32px rgba(0,0,0,0.35)", display: "inline-block", maxWidth: '100%' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -266,7 +275,7 @@ export default async function RenderPage(props: {
           const isDual = data.formato === 'tv_h';
 
           return (
-          <div style={{ position: "absolute", zIndex: 15, top: `${posY}%`, left: `${posX}%`, width: `${wPct}%`, background: bgRgba, backdropFilter: "blur(20px)", borderRadius: 48 * s, border: `2px solid rgba(255,255,255,0.1)`, padding: `${64 * s}px ${48 * s}px`, color: "white", display: "flex", flexDirection: isDual ? "row" : "column", gap: isDual ? 64 * s : 32 * s, boxShadow: "0 30px 60px rgba(0,0,0,0.5)" }}>
+          <div style={{ position: "absolute", zIndex: screenMenu.customZ !== undefined ? screenMenu.customZ : 15, top: `${posY}%`, left: `${posX}%`, width: `${wPct}%`, background: bgRgba, backdropFilter: "blur(20px)", borderRadius: 48 * s, border: `2px solid rgba(255,255,255,0.1)`, padding: `${64 * s}px ${48 * s}px`, color: "white", display: "flex", flexDirection: isDual ? "row" : "column", gap: isDual ? 64 * s : 32 * s, boxShadow: "0 30px 60px rgba(0,0,0,0.5)" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 24 * s }}>
               {screenMenu.menuItems.filter((i: any) => i.name || i.price).map((item: any, idx: number) => (
                 <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 8 * s, borderBottom: `2px dashed rgba(255,255,255,0.2)`, paddingBottom: 16 * s }}>

@@ -18,6 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://digitalbite.app"),
   title: "DigitalBite | El Editor Gráfico Inteligente para Restaurantes",
   description: "Crea banners, posts y menús digitales para tu restaurante en segundos con Inteligencia Artificial. La herramienta definitiva para marketing gastronómico.",
   keywords: ["Marketing Gastronómico","Menú Digital","Banners para Restaurantes","Editor de Imágenes IA","DigitalBite","Diseño para Comida","Publicidad Restaurantes"],
@@ -51,7 +52,7 @@ import MainWrapper from "../components/MainWrapper";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`scroll-smooth ${spaceGrotesk.variable} ${inter.variable}`}>
+    <html lang="es" className={`scroll-smooth ${spaceGrotesk.variable} ${inter.variable}`} data-scroll-behavior="smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
