@@ -343,6 +343,10 @@ export default function DashboardPage() {
     setLoadingVideoId(renderObj.id);
 
     try {
+      // 1. Marcar en Firestore que el video se está procesando
+      const renderRef = doc(db, "renders_temporales", renderObj.id);
+      await updateDoc(renderRef, { videoStatus: 'creating' });
+
       const layout = templates.find((t: any) => 
         t.imageUrlStory === renderObj.fondoUrl || t.imageUrlPost === renderObj.fondoUrl || 
         t.imageUrlTv === renderObj.fondoUrl || t.urlStory === renderObj.fondoUrl || t.urlPost === renderObj.fondoUrl
@@ -361,7 +365,7 @@ export default function DashboardPage() {
         codigoPedido: renderObj.id, 
         layoutId, 
         categoria, 
-        finalImageUrl, // <--- Nueva URL para Gemini
+        finalImageUrl,
         ...renderObj 
       };
 
@@ -370,10 +374,14 @@ export default function DashboardPage() {
       });
       if (!res.ok) throw new Error("Error en webhook");
 
-      alert("¡Animación de video iniciada! Ocupa mucho CPU, por lo que demorará unos minutos. Podrás ver el video aquí en 'Mis Diseños' cuando esté listo.");
+      alert("¡Animación de video iniciada! Aparecerá automáticamente en esta lista en unos minutos.");
       setShowResultModal(false);
     } catch (err) {
-      console.error(err); alert("Error al enviar la solicitud de video.");
+      console.error(err); 
+      alert("Error al iniciar la generación de video.");
+      // Revertir estado si falla el inicio
+      const renderRef = doc(db, "renders_temporales", renderObj.id);
+      await updateDoc(renderRef, { videoStatus: null });
     } finally {
       setLoadingVideoId(null);
     }
@@ -717,6 +725,11 @@ export default function DashboardPage() {
                                     <a href={render.videoUrl} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-1 w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 text-emerald-600 font-bold py-2 rounded-xl text-[11px] transition-colors">
                                        <span aria-hidden="true">▶️</span> Play Video
                                     </a>
+                                  ) : render.videoStatus === 'creating' ? (
+                                    <div className="flex items-center justify-center gap-2 w-full bg-amber-50 border border-amber-100 text-amber-600 font-bold py-2 rounded-xl text-[10px] animate-pulse">
+                                      <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                                      🎬 Procesando...
+                                    </div>
                                   ) : (
                                     <button onClick={() => handleVideoGenerate(render)} disabled={loadingVideoId === render.id} aria-label={`Generar video de ${render.titulo || 'diseño'}`} className="flex items-center justify-center gap-1 w-full bg-rose-50 hover:bg-rose-100 disabled:bg-slate-50 border border-rose-100 disabled:border-slate-100 text-rose-600 disabled:text-slate-400 font-bold py-2 rounded-xl text-[11px] transition-colors">
                                        {loadingVideoId === render.id ? <div className="w-3 h-3 border-2 border-slate-400 border-t-white rounded-full animate-spin"/> : <span aria-hidden="true">🎬</span>} 
