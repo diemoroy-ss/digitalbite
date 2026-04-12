@@ -119,22 +119,47 @@ export default async function RenderPage(props: {
   }
 
   const isPost = data.formato === "post";
-  const W = 1080, H = isPost ? 1080 : 1920;
+  const isTvH = data.formato === "tv_h";
+  const W = 1080, H = isTvH ? 1080 : (isPost ? 1080 : 1920);
 
-  // Normalizar capas: asegurar que todos los campos tengan valores válidos
+  // ── Normalizar capas (maneja AMBOS sistemas: px absolutos y % relativos) ─────
+  // El editor guarda posX/posY como % del contenedor (0-100)
+  // y width/height también como %, PERO capas antiguas las guardan como px absolutas
+  // Regla: si width > 100 → tratarlo como px del canvas 1080, convertir a %.
   const rawLayers: any[] = data.textLayers || [];
   const layers: Layer[] = rawLayers.map(l => {
-    let widthPct = "100%";
-    if (l.width) {
-      if (typeof l.width === 'string' && l.width.endsWith('%')) widthPct = l.width;
-      else if (typeof l.width === 'number' && l.width <= 100) widthPct = `${l.width}%`;
-      else widthPct = `${(Number(l.width) / (data.formato === 'post' ? 400 : data.formato === 'tv_h' ? 700 : 250)) * 100}%`;
+    // --- posX / posY: siempre se interpretaron como %, mantener
+    const posX = l.posX !== undefined ? Number(l.posX) : (Number(l.x) / W * 100) || 50;
+    const posY = l.posY !== undefined ? Number(l.posY) : (Number(l.y) / H * 100) || 50;
+
+    // --- width: detectar si está en px o en %
+    let widthPct = "78%"; // default razonable
+    if (l.width !== undefined && l.width !== null && l.width !== "") {
+      const wRaw = l.width;
+      if (typeof wRaw === 'string' && wRaw.endsWith('%')) {
+        widthPct = wRaw;  // ya es porcentaje
+      } else {
+        const wNum = parseFloat(String(wRaw));
+        if (!isNaN(wNum)) {
+          if (wNum <= 100) widthPct = `${wNum}%`; // guardado como %
+          else widthPct = `${(wNum / W) * 100}%`;  // guardado como px del canvas
+        }
+      }
     }
 
+    // --- height: misma lógica
     let heightPct = "auto";
-    if (l.height) {
-      if (typeof l.height === 'string' && l.height.endsWith('%')) heightPct = l.height;
-      else if (typeof l.height === 'number' && l.height <= 100) heightPct = `${l.height}%`;
+    if (l.height !== undefined && l.height !== null && l.height !== "") {
+      const hRaw = l.height;
+      if (typeof hRaw === 'string' && hRaw.endsWith('%')) {
+        heightPct = hRaw;
+      } else {
+        const hNum = parseFloat(String(hRaw));
+        if (!isNaN(hNum)) {
+          if (hNum <= 100) heightPct = `${hNum}%`;
+          else heightPct = `${(hNum / H) * 100}%`;
+        }
+      }
     }
 
     return {
@@ -142,8 +167,7 @@ export default async function RenderPage(props: {
       fieldKey: l.fieldKey || undefined,
       type: String(l.type || "text"),
       text: String(l.text || ""),
-      posX: l.posX !== undefined ? Number(l.posX) : (Number(l.x) / W * 100) || 50,
-      posY: l.posY !== undefined ? Number(l.posY) : (Number(l.y) / H * 100) || 50,
+      posX, posY,
       fontSize: Number(l.fontSize) || 60,
       color: String(l.color || "#ffffff"),
       fontWeight: String(l.fontWeight || "bold"),
