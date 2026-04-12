@@ -78,7 +78,9 @@ export function createLayer(text = "Tu texto aquí"): TextLayer {
 }
 
 export function createImageLayer(url: string): TextLayer {
-  return { id: Math.random().toString(36).slice(2), type: "image", text: url, posX: 20, posY: 30, width: 300, height: 300, fontSize: 300, color: "#000000", fontWeight: "normal", textAlign: "center", fontFamily: "sans-serif", shadow: false };
+  // posX/posY en % del contenedor (50 = centro). width/height en % del contenedor.
+  // fontSize se usa como referencia de tamaño en canvas px pero % es más fiable.
+  return { id: Math.random().toString(36).slice(2), type: "image", text: url, posX: 50, posY: 55, width: "40%", height: "40%", fontSize: 432, color: "#000000", fontWeight: "normal", textAlign: "center", fontFamily: "sans-serif", shadow: false };
 }
 
 function LayerPreview({ layer, scale, containerW, isEditing, onTextChange, onFinishEdit, onImageClick }: { layer: TextLayer; scale: number; containerW: number; isEditing?: boolean; onTextChange?: (txt:string)=>void; onFinishEdit?: ()=>void; onImageClick?: ()=>void; }) {
@@ -398,6 +400,7 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
           } else {
               if (typeof defaultWidth === 'string' && defaultWidth.endsWith('%')) defaultWidth = (parseFloat(defaultWidth) / 100) * containerW;
               else if (typeof defaultWidth === 'number' && defaultWidth <= 100) defaultWidth = (defaultWidth / 100) * containerW;
+              else defaultWidth = Number(defaultWidth) * scale; // px canvas → px pantalla
           }
           if (!defaultHeight) {
               if (layer.type === "logo" || layer.type === "image") defaultHeight = defaultWidth;
@@ -405,6 +408,7 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
           } else {
               if (typeof defaultHeight === 'string' && defaultHeight.endsWith('%')) defaultHeight = (parseFloat(defaultHeight) / 100) * containerH;
               else if (typeof defaultHeight === 'number' && defaultHeight <= 100) defaultHeight = (defaultHeight / 100) * containerH;
+              else defaultHeight = Number(defaultHeight) * scale; // px canvas → px pantalla
           }
 
           // Ajustamos X,Y asumiendo que el legacy posX/Y era el CENTRO geométrico, pero RND usa Top-Left.
