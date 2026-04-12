@@ -97,6 +97,7 @@ interface Layer {
   fontFamily: string; shadow: boolean;
   badgeStyle: number;
   width: string;
+  height: string;
 }
 
 // ── Server Component principal ────────────────────────────────────────────────
@@ -130,6 +131,12 @@ export default async function RenderPage(props: {
       else widthPct = `${(Number(l.width) / (data.formato === 'post' ? 400 : data.formato === 'tv_h' ? 700 : 250)) * 100}%`;
     }
 
+    let heightPct = "auto";
+    if (l.height) {
+      if (typeof l.height === 'string' && l.height.endsWith('%')) heightPct = l.height;
+      else if (typeof l.height === 'number' && l.height <= 100) heightPct = `${l.height}%`;
+    }
+
     return {
       id: String(l.id || Math.random().toString(36).slice(2)),
       fieldKey: l.fieldKey || undefined,
@@ -145,6 +152,7 @@ export default async function RenderPage(props: {
       shadow: l.shadow !== false,
       badgeStyle: Number(l.badgeStyle) || 1,
       width: widthPct,
+      height: heightPct,
     };
   }).filter(l => l.text); // Ignorar capas sin texto
 
@@ -228,7 +236,7 @@ export default async function RenderPage(props: {
               }
 
               return (
-                <div key={layer.id} style={{ position: "absolute", left: `${layer.posX}%`, top: `${layer.posY}%`, transform: "translate(-50%,-50%)", zIndex: 10 + index, width: layer.width, display: "flex", alignItems: "center", justifyContent: layer.textAlign === "center" ? "center" : layer.textAlign === "right" ? "flex-end" : "flex-start" }}>
+                <div key={layer.id} style={{ position: "absolute", left: `${layer.posX}%`, top: `${layer.posY}%`, transform: "translate(-50%,-50%)", zIndex: 10 + index, width: layer.width, height: layer.height, display: "flex", alignItems: "center", justifyContent: layer.textAlign === "center" ? "center" : layer.textAlign === "right" ? "flex-end" : "flex-start" }}>
                   {isLogo ? (
                     <div style={{ background: "white", borderRadius: layer.fontSize * 0.12, padding: layer.fontSize * 0.08, boxShadow: "0 8px 32px rgba(0,0,0,0.35)", display: "inline-block", maxWidth: '100%' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
