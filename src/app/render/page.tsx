@@ -190,8 +190,8 @@ export default async function RenderPage(props: {
           </>
         )}
         
-        {/* Gradient overlay: CORREGIDO PARA QUE SEA IGUAL AL PREVIEW (Más claro) */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%, transparent 100%)", zIndex: 1 }} />
+        {/* Gradient overlay: IGUALADO EXACTAMENTE AL COMPONENTE */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 50%, transparent 100%)", zIndex: 1, pointerEvents: "none" }} />
 
         {/* ── MODO A: Capas libres (documentos nuevos con textLayers) ── */}
         {hasLayers && (
@@ -204,7 +204,7 @@ export default async function RenderPage(props: {
               const isImage = layer.type === "image";
               const bStyle = layer.badgeStyle;
 
-              const ts = layer.shadow ? "0 4px 16px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.8)" : "none";
+              const ts = layer.shadow ? "0 2px 6px rgba(0,0,0,0.95)" : "none";
               const spanStyle: React.CSSProperties = {
                 fontFamily: layer.fontFamily || "sans-serif",
                 fontSize: `${layer.fontSize}px`,
@@ -237,7 +237,7 @@ export default async function RenderPage(props: {
                   ) : isImage ? (
                     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={layer.text} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", filter: layer.shadow ? "drop-shadow(0px 20px 40px rgba(0,0,0,0.6))" : "none" }} alt="Custom Image" />
+                      <img src={layer.text} style={{ width: "100%", height: "100%", objectFit: "contain", filter: layer.shadow ? "drop-shadow(0px 10px 20px rgba(0,0,0,0.6))" : "none", pointerEvents: "none" }} alt="Custom Image" />
                     </div>
                   ) : isSocial && layer.fieldKey ? (
                     <div style={{ display: "flex", alignItems: "center", gap: `${layer.fontSize * 0.3}px` }}>
