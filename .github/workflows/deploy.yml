@@ -42,7 +42,11 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             npm install --legacy-peer-deps
             
-            echo "4. Construyendo proyecto para producción..."
+            echo "4. Limpiando procesos de build colgados y lock files..."
+            pkill -f "next build" || true
+            rm -f .next/lock
+            
+            echo "5. Construyendo proyecto para producción..."
             npm run build
             
             echo "5. Reiniciando procesos con PM2..."
