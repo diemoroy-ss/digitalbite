@@ -28,15 +28,12 @@ export default function HeroCarousel() {
   useEffect(() => {
     async function load() {
       try {
-        const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"), limit(20));
+        const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"), limit(3));
         const snap = await getDocs(q);
         const docs: RenderItem[] = snap.docs
           .map(d => ({ id: d.id, ...d.data() } as RenderItem))
-          .filter(d => !!d.id && d.fondoUrl); // fondoUrl asegura que tiene contenido real
-
-        // Shuffle — tomar 4 aleatorios del pool
-        const shuffled = docs.sort(() => Math.random() - 0.5).slice(0, 4);
-        setItems(shuffled);
+          .filter(d => !!d.id && d.fondoUrl);
+        setItems(docs);
         setLoaded(true);
       } catch (err) {
         console.error("HeroCarousel error:", err);
