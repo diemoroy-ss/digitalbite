@@ -350,10 +350,20 @@ export default function DashboardPage() {
       const layoutId = layout?.id || renderObj.layoutId || "general";
       const categoria = layout?.categoryId || layout?.category || renderObj.categoria || "general";
 
-      const payload = { tipo: "video", codigoPedido: renderObj.id, layoutId, categoria, ...renderObj };
-      
       const isTv = renderObj.destType === 'tv' || renderObj.formato?.includes('tv');
       const webhookUrl = isTv ? "https://n8n.santisoft.cl/webhook/generador-gastronomico-video-tv" : "https://n8n.santisoft.cl/webhook/generador-gastronomico";
+
+      // Agregamos la URL del render final para que Gemini/n8n puedan ver el diseño completo
+      const finalImageUrl = `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${renderObj.id}`)}`;
+      
+      const payload = { 
+        tipo: "video", 
+        codigoPedido: renderObj.id, 
+        layoutId, 
+        categoria, 
+        finalImageUrl, // <--- Nueva URL para Gemini
+        ...renderObj 
+      };
 
       const res = await fetch(webhookUrl, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
