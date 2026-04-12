@@ -299,7 +299,7 @@ export default function DashboardPage() {
            let dataDoc = null;
            if (!uDocSnapshot.empty) {
              dataDoc = uDocSnapshot.docs[0].data();
-             if (u.email === "admin@digitalbite.app" || u.email === "diemondy@gmail.com") dataDoc.role = 'admin';
+             if (u.email === "admin@digitalbite.santisoft.cl" || u.email === "diemondy@gmail.com") dataDoc.role = 'admin';
              setUserDoc(dataDoc);
            }
 
@@ -426,7 +426,7 @@ export default function DashboardPage() {
     setLoadingImg(true);
     setImageUrlWatermark(null);
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "https://digitalbite.app";
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://digitalbite.santisoft.cl";
       const urls: string[] = [];
       const generatedRenders: any[] = [];
       const validLayouts = categoriesData.find(c => c.id === selectedTemplate)?.layouts || [];
@@ -453,7 +453,7 @@ export default function DashboardPage() {
            });
            setUserDoc((prev: any) => prev ? { ...prev, generationCount: (prev.generationCount || 0) + 1 } : prev);
         }
-        const targetUrl = `https://digitalbite.app/render?id=${docRef.id}`;
+        const targetUrl = `https://digitalbite.santisoft.cl/render?id=${docRef.id}`;
         urls.push(`https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(targetUrl)}`);
         
         const newRender = { id: docRef.id, ...formData, fondoUrl: screenFondoUrl, textLayers: layersByScreen[i], screenIndex: i, screensCount: layersByScreen.length, userId: auth.currentUser?.uid, createdAt: { toDate: () => new Date() } };
@@ -671,7 +671,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mt-8">
                     {displayedRenders.map(render => {
-                        const targetUrl = `https://digitalbite.app/render?id=${render.id}`;
+                        const targetUrl = `https://digitalbite.santisoft.cl/render?id=${render.id}`;
                         const imageUrl = `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(targetUrl)}`;
                          const isHorizontal = render.formato === 'tv_h';
                          const isPost = render.formato === 'post';
@@ -681,7 +681,7 @@ export default function DashboardPage() {
                          return (
                            <article key={render.id} aria-label={`Diseño: ${render.titulo || 'Sin título'}`} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 group flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                              <div className={`${renderAspect} bg-slate-100 relative overflow-hidden`}>
-                              <img src={imageUrl} alt={`Vista previa de ${render.titulo || 'diseño'}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" onError={(e) => { e.currentTarget.src = render.fondoUrl || "https://digitalbite.app/logo.png"; }} />
+                              <img src={imageUrl} alt={`Vista previa de ${render.titulo || 'diseño'}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" loading="lazy" onError={(e) => { e.currentTarget.src = render.fondoUrl || "https://digitalbite.santisoft.cl/logo.png"; }} />
                               <div className="absolute top-3 left-3 flex gap-2">
                                   <span className="bg-indigo-600/90 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-wider">
                                     {isVideo ? '🎥 Render TV' : '📱 Render RRSS'}
@@ -1139,7 +1139,7 @@ export default function DashboardPage() {
               {/* Thumbnail mini-preview */}
               <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                  <div className="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden shrink-0 border border-slate-200">
-                    <img src={`https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.app/render?id=${sendModalRender.id}`)}`} alt="Miniatura" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = sendModalRender.fondoUrl || '/logo.png'; }} />
+                    <img src={`https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${sendModalRender.id}`)}`} alt="Miniatura" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = sendModalRender.fondoUrl || '/logo.png'; }} />
                  </div>
                  <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase text-indigo-500 tracking-widest leading-none mb-1">Adjunto HD Listo</span>
