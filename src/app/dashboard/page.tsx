@@ -355,7 +355,7 @@ export default function DashboardPage() {
       const categoria = layout?.categoryId || layout?.category || renderObj.categoria || "general";
 
       const isTv = renderObj.destType === 'tv' || renderObj.formato?.includes('tv');
-      const webhookUrl = isTv ? "https://n8n.santisoft.cl/webhook/generador-gastronomico-video-tv" : "https://n8n.santisoft.cl/webhook/generador-gastronomico";
+      const webhookUrl = isTv ? "https://n8n.santisoft.cl/webhook/generador-gastronomico-video-tv" : "https://n8n.santisoft.cl/webhook-test/generador-gastronomico";
 
       // Agregamos la URL del render final para que Gemini/n8n puedan ver el diseño completo
       const finalImageUrl = `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${renderObj.id}`)}`;
