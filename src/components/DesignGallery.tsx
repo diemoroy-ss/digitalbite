@@ -16,6 +16,7 @@ interface DesignItem {
 type FilterType = "todos" | "stories" | "menu" | "feed";
 
 const PAGE_SIZE = 9;
+const COLLECTION = "renders_temporales";
 
 // URL del render final generado por Butterfly (imagen completa con capas)
 function butterflyUrl(id: string) {
@@ -52,11 +53,11 @@ export default function DesignGallery() {
     async function load() {
       setLoading(true);
       try {
-        const q = query(collection(db, "renders"), orderBy("createdAt", "desc"), limit(PAGE_SIZE * 3));
+        const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"), limit(PAGE_SIZE * 3));
         const snap = await getDocs(q);
         const docs: DesignItem[] = snap.docs
           .map(d => ({ id: d.id, ...d.data(), _snap: d } as DesignItem))
-          .filter(d => !!d.id); // Solo necesitamos ID para generar URL de Butterfly
+          .filter(d => !!d.id && d.fondoUrl); // fondoUrl asegura que tiene fondo real
         setAllItems(docs);
         setLastSnap(snap.docs[snap.docs.length - 1] || null);
         setHasMore(snap.docs.length === PAGE_SIZE * 3);
@@ -82,7 +83,7 @@ export default function DesignGallery() {
       const snap = await getDocs(q);
       const docs: DesignItem[] = snap.docs
         .map(d => ({ id: d.id, ...d.data(), _snap: d } as DesignItem))
-        .filter(d => !!d.id);
+        .filter(d => !!d.id && d.fondoUrl);
       setAllItems(prev => [...prev, ...docs]);
       setLastSnap(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE * 2);
@@ -172,6 +173,9 @@ export default function DesignGallery() {
                 alt={item.titulo || "Diseño DigitalBite"}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
+                onError={(e) => {
+                  if (item.fondoUrl) e.currentTarget.src = item.fondoUrl;
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute bottom-3 left-3 right-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -256,6 +260,10 @@ export default function DesignGallery() {
               src={butterflyUrl(visible[lightbox.idx]?.id)}
               alt="Diseño ampliado"
               className="w-full h-auto object-contain max-h-[85vh]"
+              onError={(e) => {
+                const item = visible[lightbox.idx];
+                if (item?.fondoUrl) e.currentTarget.src = item.fondoUrl;
+              }}
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
               <span className="text-white text-sm font-bold">

@@ -11,8 +11,9 @@ interface RenderItem {
 }
 
 const INTERVAL_MS = 3500;
+const COLLECTION = "renders_temporales";
 
-// URL del render final generado por Butterfly (imagen completa con capas)
+// URL del render completo generado por Butterfly
 function butterflyUrl(id: string) {
   return `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${id}`)}`;
 }
@@ -27,13 +28,13 @@ export default function HeroCarousel() {
   useEffect(() => {
     async function load() {
       try {
-        const q = query(collection(db, "renders"), orderBy("createdAt", "desc"), limit(12));
+        const q = query(collection(db, COLLECTION), orderBy("createdAt", "desc"), limit(20));
         const snap = await getDocs(q);
         const docs: RenderItem[] = snap.docs
           .map(d => ({ id: d.id, ...d.data() } as RenderItem))
-          .filter(d => !!d.id); // Solo necesitamos el ID para Butterfly
+          .filter(d => !!d.id && d.fondoUrl); // fondoUrl asegura que tiene contenido real
 
-        // Shuffle — tomar 4 aleatorios del pool de 12
+        // Shuffle — tomar 4 aleatorios del pool
         const shuffled = docs.sort(() => Math.random() - 0.5).slice(0, 4);
         setItems(shuffled);
         setLoaded(true);
@@ -105,6 +106,10 @@ export default function HeroCarousel() {
               alt="Diseño DigitalBite"
               className="w-full h-full object-cover"
               draggable={false}
+              onError={(e) => {
+                // Fallback al fondo plano si Butterfly falla
+                if (item.fondoUrl) e.currentTarget.src = item.fondoUrl;
+              }}
             />
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
