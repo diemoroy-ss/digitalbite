@@ -792,7 +792,7 @@ export default function DashboardPage() {
                  <div className="bg-white rounded-[32px] p-8 md:p-12 border border-slate-200 shadow-sm text-center animate-in fade-in">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold tracking-widest uppercase mb-4">Paso 1: Categoría</div>
                     <h3 className="text-3xl font-black mb-10">¿Qué producto promocionarás?</h3>
-                    <div className="max-w-4xl mx-auto">
+                    <div className="w-full max-w-[1800px] mx-auto">
                       <CategorySelector 
                         categories={categoriesData.filter(c => c.id !== 'plantilla-ia')} 
                         selectedTemplate={selectedTemplate} 
@@ -808,7 +808,7 @@ export default function DashboardPage() {
                  <div className="flex flex-col gap-6 mt-6">
                     
                     {/* TOP HORIZONTAL: FORMAT & TEMPLATES */}
-                    <div className="w-full max-w-5xl mx-auto bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col gap-6">
+                    <div className="w-full max-w-[1800px] mx-auto bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col gap-6">
                        
                        <div className="flex flex-col gap-3 shrink-0">
                          <div className="flex items-center justify-between">
@@ -984,7 +984,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* BOTTOM FULL WIDTH: EDITOR */}
-                    <div className="w-full bg-slate-100 p-6 md:p-10 rounded-[32px] border border-slate-200 shadow-inner min-h-[500px]">
+                    <div className="w-full max-w-[1800px] mx-auto bg-slate-100 p-6 md:p-10 rounded-[32px] border border-slate-200 shadow-inner min-h-[500px]">
                       {selectedLayout ? (
                          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                            <div className="bg-white rounded-[24px] p-0 md:p-6 shadow-sm border border-slate-200">

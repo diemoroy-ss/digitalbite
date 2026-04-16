@@ -607,7 +607,11 @@ export default function PlantillasAdmin() {
 
                              <div className={`w-full bg-slate-100 relative overflow-hidden ${p.displayFormat === 'tv_h' ? 'aspect-[16/9]' : p.displayFormat === 'post' ? 'aspect-square' : 'aspect-[9/16]'}`} style={{ containerType: 'inline-size' }}>
                                 <div className="absolute inset-0 flex p-0 bg-slate-200">
-                                   <div className="relative flex-1 h-full cursor-pointer hover:scale-105 transition-transform duration-500" onClick={() => setPreviewImage({ url: p.displayUrl, template: p })}>
+                                   <div className="relative flex-1 h-full cursor-pointer hover:scale-105 transition-transform duration-500" onClick={() => { 
+                                       setPreviewImage({ url: p.displayUrl, template: p }); 
+                                       setBuilderFormat(p.displayFormat === 'tv_v' ? 'story' : p.displayFormat === 'tv_h' ? 'tv_h' : 'post');
+                                       setBuilderOpen(true); 
+                                    }}>
                                       <Image src={p.displayUrl} alt={p.name} fill className="object-cover" unoptimized />
                                    </div>
                                 </div>
@@ -709,68 +713,7 @@ export default function PlantillasAdmin() {
         </div>
       </div>
 
-      {/* Lightbox / Preview Modal */}
-      {previewImage && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-300" onClick={() => setPreviewImage(null)}>
-          <div className="relative max-w-6xl w-full h-full md:h-[90vh] flex flex-col md:flex-row items-center justify-center gap-6" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setPreviewImage(null)} className="absolute top-0 md:-top-12 right-0 md:bg-white/20 hover:bg-white/40 md:hover:bg-white/40 text-white rounded-full p-2 transition-colors z-50">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-            </button>
-            <div className="flex-1 flex justify-center items-center h-full max-h-[60vh] md:max-h-full">
-               {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img src={previewImage.url} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg" alt="Preview" />
-            </div>
-            
-            <div className="w-full md:w-80 bg-white rounded-2xl p-6 shadow-xl shrink-0 self-center md:self-center flex flex-col mt-4 md:mt-0 max-h-[30vh] md:max-h-full overflow-y-auto">
-               <h2 className="text-2xl font-black text-slate-900 leading-tight mb-4">{previewImage.template.name}</h2>
-               <div className="space-y-5 flex-1">
-                 <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Categorías asigandas</label>
-                    <div className="flex flex-wrap gap-2">
-                       {previewImage.template.categories?.map(catSlug => {
-                          const catName = categorias.find(c => c.slug === catSlug)?.name || catSlug;
-                          return <span key={catSlug} className="bg-indigo-50 text-indigo-700 font-bold px-3 py-1.5 rounded-full text-xs border border-indigo-100/50">{catName}</span>
-                       })}
-                    </div>
-                 </div>
-                 {previewImage.template.colors && previewImage.template.colors.length > 0 && (
-                   <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Paleta de Colores</label>
-                      <div className="flex gap-2">
-                         {previewImage.template.colors.map(c => (
-                            <div key={c} className="w-8 h-8 rounded-full shadow-inner border border-slate-200" style={{ backgroundColor: c }} title={c}/>
-                         ))}
-                      </div>
-                   </div>
-                 )}
-                 <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Formatos Subidos</label>
-                    <div className="flex flex-col gap-2">
-                      {previewImage.template.imageUrlVertical && (
-                        <div className="flex items-center justify-between bg-slate-50 border border-slate-100 p-2 rounded-xl">
-                          <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><span className="text-sm">📱</span> Vertical</span>
-                          <button onClick={() => { setBuilderFormat("story"); setBuilderOpen(true); }} className="text-[10px] font-bold bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-colors shadow-sm">Diseñar Layout</button>
-                        </div>
-                      )}
-                      {previewImage.template.imageUrlPost && (
-                        <div className="flex items-center justify-between bg-slate-50 border border-slate-100 p-2 rounded-xl">
-                          <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><span className="text-sm">⏹️</span> Post Cuadrado</span>
-                          <button onClick={() => { setBuilderFormat("post"); setBuilderOpen(true); }} className="text-[10px] font-bold bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-colors shadow-sm">Diseñar Layout</button>
-                        </div>
-                      )}
-                      {previewImage.template.imageUrlHorizontal && (
-                        <div className="flex items-center justify-between bg-slate-50 border border-slate-100 p-2 rounded-xl">
-                          <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5"><span className="text-sm">📺</span> TV Horizontal</span>
-                          <button onClick={() => { setBuilderFormat("tv_h"); setBuilderOpen(true); }} className="text-[10px] font-bold bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-colors shadow-sm">Diseñar Layout</button>
-                        </div>
-                      )}
-                    </div>
-                 </div>
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Lightbox / Preview Modal removed as per user request to open Builder directly */}
 
       {/* Visual Workspace Modal */}
       <TemplateBuilderModal 

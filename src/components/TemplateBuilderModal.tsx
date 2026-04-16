@@ -258,6 +258,7 @@ export default function TemplateBuilderModal({ isOpen, plantilla, formato, initi
                onMenuChange={setMenuData}
                templateFonts={plantilla.fonts || []}
                templateColors={plantilla.colors || []}
+               isAdminMode={true}
             />
          </div>
       </div>

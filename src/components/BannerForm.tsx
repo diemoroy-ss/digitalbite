@@ -370,36 +370,36 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
         <p className="text-slate-500 mt-2 text-sm">Arrastra, edita y diseña en tiempo real.</p>
       </div>
 
-      <form onSubmit={onSubmit} className="w-full max-w-[1400px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col min-h-[800px]">
+      <form onSubmit={onSubmit} className="w-full max-w-[1800px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col min-h-[800px]">
         {renderTabs() && <div className="p-6 border-b border-slate-50 bg-slate-50/30">{renderTabs()}</div>}
 
         <div className="flex flex-col lg:flex-row flex-1 bg-[#fdfdfc] relative">
           
           {/* TOOLBAR IZQUIERDO: Estilo Studio */}
-          <div className="w-full lg:w-[100px] bg-white border-r border-slate-100 p-3 flex lg:flex-col gap-3 items-center shrink-0 shadow-sm z-30 overflow-y-auto hide-scrollbar">
-             <button type="button" onClick={() => setActiveRightPanel('TEXTS_LIST')} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'TEXTS_LIST' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'}`}>
-                <span className="text-xl group-hover:scale-110 transition-transform">A</span>
-                <span className="text-[9px] font-black uppercase">Texto</span>
+          <div className="w-full lg:w-[110px] bg-white border-r border-slate-100 p-4 flex lg:flex-col gap-4 items-center shrink-0 shadow-sm z-30 overflow-y-auto hide-scrollbar">
+             <button type="button" onClick={() => setActiveRightPanel('TEXTS_LIST')} className={`w-full aspect-square flex flex-col items-center justify-center gap-2 rounded-3xl border-2 transition-all group ${activeRightPanel === 'TEXTS_LIST' ? 'bg-rose-50 border-rose-500 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'}`}>
+                <span className="text-2xl group-hover:scale-110 transition-transform">A</span>
+                <span className="text-[10px] font-black uppercase">Texto</span>
              </button>
-             <button type="button" onClick={() => { setActiveRightPanel('GALLERY'); setActiveGalleryType('producto'); }} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'GALLERY' && activeGalleryType === 'producto' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600'}`}>
-                <span className="text-xl group-hover:scale-110 transition-transform">🍔</span>
-                <span className="text-[9px] font-black uppercase">Productos</span>
+             <button type="button" onClick={() => { setActiveRightPanel('GALLERY'); setActiveGalleryType('producto'); }} className={`w-full aspect-square flex flex-col items-center justify-center gap-2 rounded-3xl border-2 transition-all group ${activeRightPanel === 'GALLERY' && activeGalleryType === 'producto' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600'}`}>
+                <span className="text-2xl group-hover:scale-110 transition-transform">🍔</span>
+                <span className="text-[10px] font-black uppercase text-center leading-tight">Prods<br/>PNG</span>
              </button>
-             <button type="button" onClick={() => { if(hasPriceImage) { setActiveRightPanel('GALLERY'); setActiveGalleryType('precio'); } }} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${!hasPriceImage ? 'opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-400 grayscale' : (activeRightPanel === 'GALLERY' && activeGalleryType === 'precio' ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600')}`} title={!hasPriceImage ? "La plantilla no tiene etiqueta de precio" : "Cambiar precio"}>
-                <span className="text-xl group-hover:scale-110 transition-transform">💲</span>
-                <span className="text-[9px] font-black uppercase">Precio</span>
+             <button type="button" onClick={() => { if(hasPriceImage) { setActiveRightPanel('GALLERY'); setActiveGalleryType('precio'); } }} className={`w-full aspect-square flex flex-col items-center justify-center gap-2 rounded-3xl border-2 transition-all group ${!hasPriceImage ? 'opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-400 grayscale' : (activeRightPanel === 'GALLERY' && activeGalleryType === 'precio' ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-600')}`} title={!hasPriceImage ? "La plantilla no tiene etiqueta de precio" : "Cambiar precio"}>
+                <span className="text-2xl group-hover:scale-110 transition-transform">💲</span>
+                <span className="text-[10px] font-black uppercase">Precio</span>
              </button>
-             <button type="button" onClick={() => { if (templateSupportsMenu) handleMenuChange(activeScreenIndex, { ...activeMenu, isMenuMode: !activeMenu.isMenuMode }) }} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${!templateSupportsMenu ? 'opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-400 grayscale' : (activeMenu.isMenuMode ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600')}`} title={!templateSupportsMenu ? "Esta plantilla no tiene diseño de menú configurado" : "Activar/Desactivar Menú"}>
-                <span className={`text-xl ${templateSupportsMenu && 'group-hover:scale-110'} transition-transform`}>📋</span>
-                <span className="text-[9px] font-black uppercase">Menú</span>
+             <button type="button" onClick={() => { if (templateSupportsMenu) handleMenuChange(activeScreenIndex, { ...activeMenu, isMenuMode: !activeMenu.isMenuMode }) }} className={`w-full aspect-square flex flex-col items-center justify-center gap-2 rounded-3xl border-2 transition-all group ${!templateSupportsMenu ? 'opacity-30 cursor-not-allowed bg-slate-50 border-slate-100 text-slate-400 grayscale' : (activeMenu.isMenuMode ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600')}`} title={!templateSupportsMenu ? "Esta plantilla no tiene diseño de menú configurado" : "Activar/Desactivar Menú"}>
+                <span className={`text-2xl ${templateSupportsMenu && 'group-hover:scale-110'} transition-transform`}>📋</span>
+                <span className="text-[10px] font-black uppercase">Menú</span>
              </button>
-             <button type="button" onClick={() => setActiveRightPanel('LAYERS_LIST')} className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl border transition-all group ${activeRightPanel === 'LAYERS_LIST' ? 'bg-purple-50 border-purple-500 text-purple-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600'}`} title="Posiciones y Capas">
-                <span className={`text-xl group-hover:scale-110 transition-transform`}>📑</span>
-                <span className="text-[9px] font-black uppercase">Capas</span>
+             <button type="button" onClick={() => setActiveRightPanel('LAYERS_LIST')} className={`w-full aspect-square flex flex-col items-center justify-center gap-2 rounded-3xl border-2 transition-all group ${activeRightPanel === 'LAYERS_LIST' ? 'bg-purple-50 border-purple-500 text-purple-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-600'}`} title="Posiciones y Capas">
+                <span className={`text-2xl group-hover:scale-110 transition-transform`}>📑</span>
+                <span className="text-[10px] font-black uppercase">Capas</span>
              </button>
-             <label className={`w-full aspect-square flex flex-col items-center justify-center gap-1.5 rounded-2xl transition-all mt-auto shadow-lg ${hasLogo ? 'bg-slate-100 text-slate-400 opacity-60 cursor-not-allowed grayscale' : 'bg-slate-800 text-white hover:bg-black cursor-pointer hover:-translate-y-1'}`}>
-                <span className="text-xl">{customImageLoading ? '⌛' : '☁️'}</span>
-                <span className="text-[9px] font-black uppercase text-center leading-tight tracking-wider">Subir<br/>Logo</span>
+             <label className={`w-full aspect-square flex flex-col items-center justify-center gap-2 rounded-3xl transition-all mt-auto shadow-lg ${hasLogo ? 'bg-slate-100 text-slate-400 opacity-60 cursor-not-allowed grayscale border-2' : 'bg-slate-800 text-white hover:bg-black cursor-pointer hover:-translate-y-1 border-2 border-transparent'}`}>
+                <span className="text-2xl">{customImageLoading ? '⌛' : '☁️'}</span>
+                <span className="text-[10px] font-black uppercase text-center leading-tight tracking-wider">Subir<br/>Logo</span>
                 <input type="file" accept="image/*" className="hidden" onChange={e => { if(!hasLogo) handleCustomImageUpload(e, activeScreenIndex) }} disabled={customImageLoading || hasLogo} />
              </label>
           </div>

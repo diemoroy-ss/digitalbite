@@ -180,9 +180,10 @@ interface Props {
   customFontsList?: string[];
   onImageClick?: (layerId: string) => void;
   isStrictTemplateMode?: boolean;
+  isAdminMode?: boolean;
 }
 
-export default function TextLayerEditor({ imageUrl, layers, onLayersChange, activeLayerId, onSetActiveLayer, formato = "story", menuData, onMenuChange, templateColors, templateFonts, onImageClick, isStrictTemplateMode = false }: Props) {
+export default function TextLayerEditor({ imageUrl, layers, onLayersChange, activeLayerId, onSetActiveLayer, formato = "story", menuData, onMenuChange, templateColors, templateFonts, onImageClick, isStrictTemplateMode = false, isAdminMode = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(350);
   const [containerH, setContainerH] = useState(500); 
@@ -455,19 +456,19 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
                 }
                 upd(layer.id, { posX: newPx, posY: newPy, width: newWidthPct, height: newHeightPct, ...addProps });
               }}
-              enableResizing={isStrictTemplateMode || layer.type !== "logo" ? false : {
+              enableResizing={(!isAdminMode && (isStrictTemplateMode || layer.type !== "logo")) ? false : {
                   top:false, right:false, bottom:false, left:false, 
                   topRight: isActive,
                   bottomRight: isActive, 
                   bottomLeft: isActive, 
                   topLeft: isActive 
               }}
-              disableDragging={isStrictTemplateMode || !isActive || layer.type !== "logo"}
+              disableDragging={isAdminMode ? !isActive : (isStrictTemplateMode || !isActive || layer.type !== "logo")}
               style={{
                  zIndex: 10 + idx,
                  pointerEvents: "auto",
                  border: isActive ? (isStrictTemplateMode ? "2px solid #f43f5e" : "2px dashed #f43f5e") : (recentlyAddedId === layer.id ? "2px solid #6366f1" : "1px solid transparent"),
-                 cursor: isStrictTemplateMode || layer.type !== "logo" ? "pointer" : (isActive ? "move" : "pointer"),
+                 cursor: (!isAdminMode && (isStrictTemplateMode || layer.type !== "logo")) ? "pointer" : (isActive ? "move" : "pointer"),
                  boxShadow: recentlyAddedId === layer.id && !isActive ? "0 0 0 4px rgba(99,102,241,0.35)" : "none",
                  transition: "box-shadow 0.3s ease, border 0.3s ease",
               }}
