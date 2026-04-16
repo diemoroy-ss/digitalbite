@@ -760,49 +760,6 @@ export default function GastronomicoPage() {
             )}
           </>
         )}
-
-        {/* PASO 4: Editor Fullscreen Modal */}
-        {isEditorOpen && selectedLayout && activeCat && activeCat.layouts.length > 0 && (
-          <div className="fixed inset-0 z-[500] bg-slate-900/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-300">
-            {/* Header bar */}
-            <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-700/60 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl flex items-center justify-center text-lg shadow-lg">🎨</div>
-                <div>
-                  <span className="font-black text-white text-sm leading-none block">Editor Visual</span>
-                  <span className="text-slate-400 text-[11px]">DigitalBite Studio (Demo)</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsEditorOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-700 transition-all"
-                >
-                  <span>✕</span> Cerrar Editor
-                </button>
-              </div>
-            </div>
-
-            {/* Editor content */}
-            <div className="flex-1 overflow-hidden">
-              <BannerForm
-                formData={formData}
-                setFormData={setFormData}
-                handleImg={handleImg}
-                loadingImg={loadingImg}
-                selectedLayoutObj={selectedLayoutObj}
-                imageUrlWatermark={imageUrlWatermark}
-                setShowResultModal={(show) => { setShowResultModal(show); if (show) setIsEditorOpen(false); }}
-                pendingProductToAdd={pendingProductToAdd}
-                setPendingProductToAdd={setPendingProductToAdd}
-                onOpenProductModal={() => setIsProductModalOpen(true)}
-                products={products}
-                productsError={productsError}
-                categorySlug={selectedTemplate}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       <ProductModal 
@@ -960,6 +917,49 @@ export default function GastronomicoPage() {
       )}
 
       <ChatBot />
+
+      {/* PASO 4: Editor Fullscreen Modal (AL FINAL PARA Z-INDEX) */}
+      {isEditorOpen && selectedLayout && activeCat && activeCat.layouts.length > 0 && (
+        <div className="fixed inset-0 z-[500] bg-slate-900/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-300">
+          {/* Header bar */}
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-700/60 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl flex items-center justify-center text-lg shadow-lg">🎨</div>
+              <div>
+                <span className="font-black text-white text-sm leading-none block">Editor Visual</span>
+                <span className="text-slate-400 text-[11px]">DigitalBite Studio (Demo)</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsEditorOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-700 transition-all"
+              >
+                <span>✕</span> Cerrar Editor
+              </button>
+            </div>
+          </div>
+
+          {/* Editor content */}
+          <div className="flex-1 overflow-hidden">
+            <BannerForm
+              formData={formData}
+              setFormData={setFormData}
+              handleImg={handleImg}
+              loadingImg={loadingImg}
+              selectedLayoutObj={selectedLayoutObj}
+              imageUrlWatermark={imageUrlWatermark}
+              setShowResultModal={(show) => { setShowResultModal(show); if (show) setIsEditorOpen(false); }}
+              pendingProductToAdd={pendingProductToAdd}
+              setPendingProductToAdd={setPendingProductToAdd}
+              onOpenProductModal={() => setIsProductModalOpen(true)}
+              products={products}
+              productsError={productsError}
+              categorySlug={selectedTemplate}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
