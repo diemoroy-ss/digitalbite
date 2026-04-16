@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const [renderingIndex, setRenderingIndex] = useState<number>(0);
   const [loadingImg, setLoadingImg] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingRender, setEditingRender] = useState<any>(null);
 
   // ----- MIS DISEÑOS FILTERS -----
   const [filterFormat, setFilterFormat] = useState<string>("all");
@@ -505,6 +506,19 @@ export default function DashboardPage() {
     return !!l.urlTv || !!l.urlStory || !!l.url;
   }) || [];
 
+  // Editor modal computed values
+  const editorLayoutObj: any = editingRender
+    ? (() => {
+        for (const cat of categoriesData) {
+          const l = cat.layouts?.find((l: any) => l.url === editingRender.fondoUrl || l.urlStory === editingRender.fondoUrl || l.urlTv === editingRender.fondoUrl || l.fondoUrl === editingRender.fondoUrl);
+          if (l) return l;
+        }
+        return { url: editingRender.fondoUrl, urlStory: editingRender.fondoUrl, name: editingRender.titulo };
+      })()
+    : null;
+  const activeEditorLayoutObj = editorLayoutObj || selectedLayoutObj;
+  const editorInitialLayers: any[] | undefined = editingRender ? [editingRender.textLayers || []] : undefined;
+
 
   if (loading) return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -710,6 +724,15 @@ export default function DashboardPage() {
                                   </span>
                               </div>
                               <div className="absolute top-3 right-3 flex gap-2 z-10 transition-opacity opacity-0 group-hover:opacity-100">
+                                   <button onClick={(e) => { e.preventDefault(); const r = render;
+                                     setFormData({ nombreLocal: r.nombreLocal||'', titulo: r.titulo||'', subtitulo: r.subtitulo||'', ingredientes: r.ingredientes||'', precio: r.precio||'', mensaje: r.mensaje||'', facebook: r.facebook||'', instagram: r.instagram||'', tiktok: r.tiktok||'', destType: r.destType||'rrss', formato: r.formato||'story', screensCount: r.screensCount||1, logo: r.logo||'', menusByScreen: r.menusByScreen || [{ isMenuMode: false, menuItems: [{ name: '', price: '' }] }] });
+                                     setSelectedTemplate(r.categorySlug || null);
+                                     if (r.destType === 'tv') { setActiveTab('tv'); } else { setActiveTab('rrss'); }
+                                     setEditingRender(r);
+                                     setIsEditorOpen(true);
+                                   }} className="bg-indigo-500/90 hover:bg-indigo-600 backdrop-blur-md text-white text-[11px] font-black px-2 h-7 flex items-center gap-1 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95">
+                                     ✏️ Editar
+                                   </button>
                                   <button onClick={(e) => handleDeleteDesign(render.id, e)} disabled={deletingId === render.id} className="bg-red-500/90 hover:bg-red-600 backdrop-blur-md text-white text-[12px] font-black w-7 h-7 flex items-center justify-center rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
                                     {deletingId === render.id ? <div className="w-3 h-3 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : <span aria-hidden="true" title="Eliminar Diseño">🗑️</span>}
                                   </button>
@@ -1197,23 +1220,30 @@ export default function DashboardPage() {
       )}
 
       {/* FULLSCREEN EDITOR MODAL */}
-      {isEditorOpen && selectedLayout && (
+      {isEditorOpen && (selectedLayout || editingRender) && (
         <div className="fixed inset-0 z-[500] bg-slate-900/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-300">
           {/* Header bar */}
           <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-700/60 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl flex items-center justify-center text-lg shadow-lg">🎨</div>
               <div>
-                <span className="font-black text-white text-sm leading-none block">Editor Visual</span>
-                <span className="text-slate-400 text-[11px]">DigitalBite Studio</span>
+                <span className="font-black text-white text-sm leading-none block">{editingRender ? 'Editando Diseño' : 'Editor Visual'}</span>
+                <span className="text-slate-400 text-[11px]">{editingRender ? (editingRender.titulo || 'Sin título') : 'DigitalBite Studio'}</span>
               </div>
             </div>
-            <button
-              onClick={() => setIsEditorOpen(false)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-700 transition-all"
-            >
-              <span>✕</span> Cerrar Editor
-            </button>
+            <div className="flex items-center gap-2">
+              {editingRender && (
+                <button onClick={() => { setEditingRender(null); setIsEditorOpen(false); }} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-600 transition-all">
+                  Cancelar edición
+                </button>
+              )}
+              <button
+                onClick={() => { setIsEditorOpen(false); setEditingRender(null); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-700 transition-all"
+              >
+                <span>✕</span> Cerrar Editor
+              </button>
+            </div>
           </div>
 
           {/* Editor content */}
@@ -1231,17 +1261,18 @@ export default function DashboardPage() {
               setFormData={setFormData}
               handleImg={handleImg}
               loadingImg={loadingImg}
-              selectedLayoutObj={selectedLayoutObj}
+              selectedLayoutObj={activeEditorLayoutObj}
               validLayouts={validLayouts}
               imageUrlWatermark={imageUrlWatermark}
-              setShowResultModal={(show) => { setShowResultModal(show); if (show) setIsEditorOpen(false); }}
+              setShowResultModal={(show) => { setShowResultModal(show); if (show) { setIsEditorOpen(false); setEditingRender(null); } }}
               pendingProductToAdd={pendingProductToAdd}
               setPendingProductToAdd={setPendingProductToAdd}
               onOpenProductModal={() => setIsProductModalOpen(true)}
               customFonts={customFonts}
               products={products}
-              categorySlug={selectedTemplate}
+              categorySlug={selectedTemplate || editingRender?.categorySlug}
               userDoc={userDoc}
+              initialLayers={editorInitialLayers}
             />
           </div>
         </div>

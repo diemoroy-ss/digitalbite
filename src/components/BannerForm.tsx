@@ -56,6 +56,7 @@ interface BannerFormProps {
   productsError?: string | null;
   categorySlug?: string | null;
   userDoc?: any;
+  initialLayers?: TextLayer[][];
 }
 
 const SYS_DEFAULTS: Record<string, Partial<TextLayer> & { type: LayerType }> = {
@@ -208,11 +209,11 @@ function MenuListEditor({ menuData, onChange, onOpenProduct, formato }: { menuDa
   );
 }
 
-export default function BannerForm({ formData, setFormData, handleImg, loadingImg, selectedLayoutObj, imageUrlWatermark, setShowResultModal, pendingProductToAdd, setPendingProductToAdd, onOpenProductModal, validLayouts, customFonts, products, productsError, userDoc, categorySlug }: BannerFormProps) {
+export default function BannerForm({ formData, setFormData, handleImg, loadingImg, selectedLayoutObj, imageUrlWatermark, setShowResultModal, pendingProductToAdd, setPendingProductToAdd, onOpenProductModal, validLayouts, customFonts, products, productsError, userDoc, categorySlug, initialLayers }: BannerFormProps) {
   const screensCount = formData.screensCount || 1;
   const isMultiScreen = formData.formato === 'tv_h' || formData.formato === 'tv_v';
 
-  const [layersByScreen, setLayersByScreen] = useState<TextLayer[][]>([[]]);
+  const [layersByScreen, setLayersByScreen] = useState<TextLayer[][]>(initialLayers || [[]]);
   const [activeScreenIndex, setActiveScreenIndex] = useState<number>(0);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [customImageLoading, setCustomImageLoading] = useState(false);
