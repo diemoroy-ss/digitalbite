@@ -572,9 +572,9 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
           </div>
 
           {/* ÁREA CENTRAL: Lienzo (AHORA A LA DERECHA) */}
-          <div className="flex-1 p-8 lg:p-12 lg:pt-6 bg-[#f8f8f7] flex flex-col items-center justify-start relative group/canvas overflow-y-auto">
+          <div className="flex-1 p-8 lg:p-12 lg:pt-6 bg-[#f8f8f7] flex flex-col items-center justify-center relative group/canvas overflow-y-auto">
 
-             <div className={`w-full max-w-4xl bg-black rounded-[48px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] flex flex-col items-center justify-center border-[12px] border-white relative transition-all duration-700 ${formData.formato === 'post' ? 'aspect-square' : (formData.formato === 'tv_h' ? 'aspect-[16/9]' : 'min-h-[600px]')}`}>
+             <div className={`flex flex-col items-center justify-center relative transition-all duration-700 w-full h-full`}>
                 {previewUrl ? (
                    <TextLayerEditor 
                      imageUrl={previewUrl} 
