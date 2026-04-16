@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [renderingIndex, setRenderingIndex] = useState<number>(0);
   const [loadingImg, setLoadingImg] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   // ----- MIS DISEÑOS FILTERS -----
   const [filterFormat, setFilterFormat] = useState<string>("all");
@@ -926,7 +927,7 @@ export default function DashboardPage() {
                                     ? (l.defaultLayersHorizontal || l.layouts?.tv_h?.layers)
                                     : (l.defaultLayersPost || l.layouts?.post?.layers);
                                 return (
-                                  <button key={l.id} onClick={() => setSelectedLayout(l.id)}
+                                  <button key={l.id} onClick={() => { setSelectedLayout(l.id); setIsEditorOpen(true); }}
                                     className={`flex-shrink-0 relative rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border-[3px] group outline-none ${
                                       isHorizontal ? 'w-48 aspect-[16/9]' : (formData.formato === 'post' ? 'w-32 aspect-square' : 'w-24 aspect-[9/16]')
                                     } ${isSelected ? 'border-indigo-500 ring-4 ring-indigo-500/20 scale-[0.98]' : 'border-transparent hover:border-slate-300 hover:scale-[1.02]'}`}
@@ -983,49 +984,19 @@ export default function DashboardPage() {
                        </div>
                     </div>
 
-                    {/* BOTTOM FULL WIDTH: EDITOR */}
-                    <div className="w-full max-w-[1800px] mx-auto bg-slate-100 p-6 md:p-10 rounded-[32px] border border-slate-200 shadow-inner min-h-[500px]">
-                      {selectedLayout ? (
-                         <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                           <div className="bg-white rounded-[24px] p-0 md:p-6 shadow-sm border border-slate-200">
-                             {customFonts.length > 0 && (
-                                <style>{customFonts.map(f => f.url.includes("fonts.googleapis.com") ? `@import url('${f.url}');` : `
-                                  @font-face {
-                                    font-family: "${f.name}";
-                                    src: url(${f.url});
-                                  }
-                                `).join("\n")}</style>
-                             )}
-                             <BannerForm
-                                formData={formData}
-                                setFormData={setFormData}
-                                handleImg={handleImg}
-                                loadingImg={loadingImg}
-                                selectedLayoutObj={selectedLayoutObj}
-                                validLayouts={validLayouts}
-                                imageUrlWatermark={imageUrlWatermark}
-                                setShowResultModal={setShowResultModal}
-                                pendingProductToAdd={pendingProductToAdd}
-                                setPendingProductToAdd={setPendingProductToAdd}
-                                onOpenProductModal={() => setIsProductModalOpen(true)}
-                                customFonts={customFonts}
-                                products={products}
-                                categorySlug={selectedTemplate}
-                                userDoc={userDoc}
-                             />
-                           </div>
-                         </div>
-                      ) : (
-                         <div className="flex flex-col items-center justify-center h-full text-center py-20 px-4">
-                            <div className="w-24 h-24 mb-6 relative">
-                               <div className="absolute inset-0 bg-indigo-100 rounded-full animate-ping opacity-30"></div>
-                               <div className="absolute inset-0 bg-white border-2 border-dashed border-indigo-200 rounded-full flex items-center justify-center text-4xl shadow-sm z-10">👆</div>
-                            </div>
-                            <h3 className="text-xl font-black text-slate-800 mb-2">Selecciona un diseño arriba</h3>
-                            <p className="text-slate-500 text-sm max-w-xs mx-auto leading-relaxed">Elige qué plantilla se adapta mejor a tu idea para desplegar el editor a pantalla completa.</p>
-                         </div>
-                      )}
-                    </div>
+                    {/* BOTTOM: CTA cuando ya hay plantilla seleccionada */}
+                     {selectedLayout && (
+                       <div className="w-full max-w-[1800px] mx-auto mt-2">
+                         <button
+                           onClick={() => setIsEditorOpen(true)}
+                           className="w-full py-5 rounded-[28px] bg-gradient-to-r from-rose-500 to-orange-500 text-white font-black text-lg shadow-xl hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-rose-200"
+                         >
+                           <span className="text-2xl">🎨</span>
+                           Abrir Editor a Pantalla Completa
+                           <span className="text-2xl">→</span>
+                         </button>
+                       </div>
+                     )}
 
                  </div>
               )}
@@ -1221,6 +1192,57 @@ export default function DashboardPage() {
                   {loadingSendId ? 'Enviando...' : `Enviar por ${sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}`}
                </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN EDITOR MODAL */}
+      {isEditorOpen && selectedLayout && (
+        <div className="fixed inset-0 z-[500] bg-slate-900/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-300">
+          {/* Header bar */}
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-700/60 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-orange-500 rounded-xl flex items-center justify-center text-lg shadow-lg">🎨</div>
+              <div>
+                <span className="font-black text-white text-sm leading-none block">Editor Visual</span>
+                <span className="text-slate-400 text-[11px]">DigitalBite Studio</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsEditorOpen(false)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-700 transition-all"
+            >
+              <span>✕</span> Cerrar Editor
+            </button>
+          </div>
+
+          {/* Editor content */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+            {customFonts.length > 0 && (
+              <style>{customFonts.map(f => f.url.includes("fonts.googleapis.com") ? `@import url('${f.url}');` : `
+                @font-face {
+                  font-family: "${f.name}";
+                  src: url(${f.url});
+                }
+              `).join("\n")}</style>
+            )}
+            <BannerForm
+              formData={formData}
+              setFormData={setFormData}
+              handleImg={handleImg}
+              loadingImg={loadingImg}
+              selectedLayoutObj={selectedLayoutObj}
+              validLayouts={validLayouts}
+              imageUrlWatermark={imageUrlWatermark}
+              setShowResultModal={(show) => { setShowResultModal(show); if (show) setIsEditorOpen(false); }}
+              pendingProductToAdd={pendingProductToAdd}
+              setPendingProductToAdd={setPendingProductToAdd}
+              onOpenProductModal={() => setIsProductModalOpen(true)}
+              customFonts={customFonts}
+              products={products}
+              categorySlug={selectedTemplate}
+              userDoc={userDoc}
+            />
           </div>
         </div>
       )}

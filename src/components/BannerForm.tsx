@@ -361,16 +361,9 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
   };
 
   return (
-    <section className="animate-in fade-in duration-700 mb-20">
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-100 text-rose-600 text-[11px] font-black uppercase mb-3 tracking-widest">
-           ✨ DigitalBite Studio 2.0
-        </div>
-        <h2 className="text-4xl font-black text-slate-900 tracking-tight">Crea tu experiencia visual</h2>
-        <p className="text-slate-500 mt-2 text-sm">Arrastra, edita y diseña en tiempo real.</p>
-      </div>
+    <section className="animate-in fade-in duration-700">
 
-      <form onSubmit={onSubmit} className="w-full max-w-[1800px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col lg:h-[88vh] min-h-[700px]">
+      <form onSubmit={onSubmit} className="w-full max-w-[1800px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 80px)', minHeight: '640px' }}>
         {renderTabs() && <div className="p-6 border-b border-slate-50 bg-slate-50/30">{renderTabs()}</div>}
 
         <div className="flex flex-col lg:flex-row flex-1 bg-[#fdfdfc] relative">
