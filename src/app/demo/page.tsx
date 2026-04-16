@@ -395,6 +395,23 @@ export default function GastronomicoPage() {
 
       if (!respInit.ok) throw new Error("Error al contactar con la IA inicial.");
 
+      // Extraer la intención (categoría) en paralelo mientras se genera la imagen
+      let detectedIntent = "general";
+      const extractIntent = async () => {
+        try {
+          const res = await fetch("/api/ai-categorize", {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({ idea: aiFormData.idea, categories: dbCategories })
+          });
+          const data = await res.json();
+          if (data.categoryId) detectedIntent = data.categoryId;
+        } catch (e) {
+           console.error("No se pudo detectar la intención:", e);
+        }
+      };
+      const intentPromise = extractIntent();
+
       // 3. Iniciar Polling (preguntar cada 5 segundos si el trabajo terminó)
       setAiPollingText("Analizando tu marca (puede tomar ~30s)...");
       let urlImage = null;
@@ -423,8 +440,10 @@ export default function GastronomicoPage() {
 
       setAiPollingText("¡Imagen lista! Cargando editor...");
 
+      await intentPromise; // Asegurar que la intención se calculó
+
       setLastAiImageUrl(urlImage);
-      applyAiImage(urlImage);
+      applyAiImage(urlImage, detectedIntent);
 
     } catch (err: any) {
       console.error(err);
@@ -438,25 +457,38 @@ export default function GastronomicoPage() {
 
 
   // Funcion para aplicar una imagen IA al editor (reusar o nueva)
-  const applyAiImage = (url: string) => {
+  const applyAiImage = (url: string, detectedIntent: string = "general") => {
     setSelectedTemplate("plantilla-ia");
     setSelectedLayout("diseño-ia");
-    setCategoriesData(prev => [
-      {
-        id: "plantilla-ia",
-        name: "IA Generativa",
-        desc: "Fondo único",
-        icon: () => <span>✨</span>,
-        layouts: [{
-          id: "diseño-ia",
-          name: "Tu Fondo IA",
-          desc: "Creado exclusivamente para ti",
-          url,
-          urlStory: url
-        }]
-      },
-      ...prev.filter(c => c.id !== "plantilla-ia")
-    ]);
+    
+    setCategoriesData(prev => {
+      const filtered = prev.filter(c => c.id !== "plantilla-ia");
+      
+      // Buscar la categoría detectada y moverla al inicio
+      const intentCatIndex = filtered.findIndex(c => c.id === detectedIntent);
+      if (intentCatIndex > -1) {
+         const intentCat = filtered.splice(intentCatIndex, 1)[0];
+         filtered.unshift(intentCat);
+      }
+      
+      return [
+        {
+          id: "plantilla-ia",
+          name: "Tu Nuevo Fondo",
+          desc: "Aplicado automáticamente",
+          icon: () => <span>✨</span>,
+          layouts: [{
+            id: "diseño-ia",
+            name: "Fondo Custom",
+            desc: "Tu fondo generado con IA",
+            url,
+            urlStory: url
+          }]
+        },
+        ...filtered
+      ];
+    });
+
     setIsAIMode(false);
     setIsEditorOpen(true);
   };
