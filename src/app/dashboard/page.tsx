@@ -69,6 +69,7 @@ export default function DashboardPage() {
   // ----- MIS DISEÑOS FILTERS -----
   const [filterFormat, setFilterFormat] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [returnTab, setReturnTab] = useState<typeof activeTab | null>(null);
 
   const displayedRenders = useMemo(() => {
     let result = [...renders];
@@ -727,6 +728,7 @@ export default function DashboardPage() {
                                    <button onClick={(e) => { e.preventDefault(); const r = render;
                                      setFormData({ nombreLocal: r.nombreLocal||'', titulo: r.titulo||'', subtitulo: r.subtitulo||'', ingredientes: r.ingredientes||'', precio: r.precio||'', mensaje: r.mensaje||'', facebook: r.facebook||'', instagram: r.instagram||'', tiktok: r.tiktok||'', destType: r.destType||'rrss', formato: r.formato||'story', screensCount: r.screensCount||1, logo: r.logo||'', menusByScreen: r.menusByScreen || [{ isMenuMode: false, menuItems: [{ name: '', price: '' }] }] });
                                      setSelectedTemplate(r.categorySlug || null);
+                                     setReturnTab(activeTab);
                                      if (r.destType === 'tv') { setActiveTab('tv'); } else { setActiveTab('rrss'); }
                                      setEditingRender(r);
                                      setIsEditorOpen(true);
@@ -950,7 +952,7 @@ export default function DashboardPage() {
                                     ? (l.defaultLayersHorizontal || l.layouts?.tv_h?.layers)
                                     : (l.defaultLayersPost || l.layouts?.post?.layers);
                                 return (
-                                  <button key={l.id} onClick={() => { setSelectedLayout(l.id); setIsEditorOpen(true); }}
+                                  <button key={l.id} onClick={() => { setSelectedLayout(l.id); setReturnTab(activeTab); setIsEditorOpen(true); }}
                                     className={`flex-shrink-0 relative rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border-[3px] group outline-none ${
                                       isHorizontal ? 'w-48 aspect-[16/9]' : (formData.formato === 'post' ? 'w-32 aspect-square' : 'w-24 aspect-[9/16]')
                                     } ${isSelected ? 'border-indigo-500 ring-4 ring-indigo-500/20 scale-[0.98]' : 'border-transparent hover:border-slate-300 hover:scale-[1.02]'}`}
@@ -1011,7 +1013,7 @@ export default function DashboardPage() {
                      {selectedLayout && (
                        <div className="w-full max-w-[1800px] mx-auto mt-2">
                          <button
-                           onClick={() => setIsEditorOpen(true)}
+                           onClick={() => { setReturnTab(activeTab); setIsEditorOpen(true); }}
                            className="w-full py-5 rounded-[28px] bg-gradient-to-r from-rose-500 to-orange-500 text-white font-black text-lg shadow-xl hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-rose-200"
                          >
                            <span className="text-2xl">🎨</span>
@@ -1233,12 +1235,12 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               {editingRender && (
-                <button onClick={() => { setEditingRender(null); setIsEditorOpen(false); }} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-600 transition-all">
+                <button onClick={() => { if (returnTab) setActiveTab(returnTab); setReturnTab(null); setEditingRender(null); setIsEditorOpen(false); }} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-600 transition-all">
                   Cancelar edición
                 </button>
               )}
               <button
-                onClick={() => { setIsEditorOpen(false); setEditingRender(null); }}
+                onClick={() => { if (returnTab) setActiveTab(returnTab); setReturnTab(null); setIsEditorOpen(false); setEditingRender(null); }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[13px] border border-slate-700 transition-all"
               >
                 <span>✕</span> Cerrar Editor
