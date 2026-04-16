@@ -226,7 +226,7 @@ export default function TextLayerEditor({ imageUrl, layers, onLayersChange, acti
   const active = layers.find(l => l.id === activeLayerId);
 
   return (
-    <div className="flex flex-col gap-3 h-full items-center justify-center w-full">
+    <div className="flex flex-col gap-3 h-full items-center justify-start w-full">
       <div ref={containerRef}
         className="relative rounded-[24px] overflow-hidden shadow-2xl border-4 border-slate-800/20 bg-slate-900 cursor-crosshair transition-all"
         style={{ 

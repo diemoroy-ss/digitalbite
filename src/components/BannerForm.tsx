@@ -603,9 +603,9 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
           </div>
 
           {/* ÁREA CENTRAL: Lienzo (AHORA A LA DERECHA) */}
-          <div className="flex-1 p-8 lg:p-12 lg:pt-6 bg-[#f8f8f7] flex flex-col items-center justify-center relative group/canvas overflow-y-auto">
+          <div className="flex-1 p-8 lg:p-12 lg:pt-12 bg-[#f8f8f7] flex flex-col items-center justify-start relative group/canvas overflow-y-auto custom-scrollbar">
 
-             <div className={`flex flex-col items-center justify-center relative transition-all duration-700 w-full h-full`}>
+             <div className="flex flex-col items-center justify-start relative transition-all duration-700 w-full min-h-full">
                 {previewUrl ? (
                    <TextLayerEditor 
                      imageUrl={previewUrl} 
