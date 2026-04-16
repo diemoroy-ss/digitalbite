@@ -368,71 +368,72 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
 
         <div className="flex flex-col lg:flex-row flex-1 bg-[#fdfdfc] relative">
           
-          {/* SIDEBAR IZQUIERDO: Estilo menú navegación */}
-          <div className="hidden lg:flex lg:flex-col w-[200px] bg-white border-r border-slate-100 py-4 shrink-0 shadow-sm z-30 overflow-y-auto hide-scrollbar">
+          {/* SIDEBAR IZQUIERDO: Estilo menú navegación oscuro */}
+          <div className="hidden lg:flex lg:flex-col w-[200px] bg-slate-900 py-4 shrink-0 z-30 overflow-y-auto hide-scrollbar border-r border-slate-800">
 
             {/* Sección: Herramientas */}
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-4 mb-2">Herramientas</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-4 mb-2">Herramientas</p>
 
             <button type="button" onClick={() => setActiveRightPanel('TEXTS_LIST')}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${activeRightPanel === 'TEXTS_LIST' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:scale-105 transition-transform shrink-0">A</span>
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${activeRightPanel === 'TEXTS_LIST' ? 'border-rose-400 bg-white/10 text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors shrink-0">A</span>
               <div className="text-left">
                 <span className="block text-[13px] font-black leading-none">Textos</span>
-                <span className="block text-[10px] text-slate-400 mt-0.5">Editar capas</span>
+                <span className="block text-[10px] text-slate-500 mt-0.5">Editar capas</span>
               </div>
             </button>
 
             <button type="button" onClick={() => { setActiveRightPanel('GALLERY'); setActiveGalleryType('producto'); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${activeRightPanel === 'GALLERY' && activeGalleryType === 'producto' ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:scale-105 transition-transform shrink-0">🍔</span>
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${activeRightPanel === 'GALLERY' && activeGalleryType === 'producto' ? 'border-indigo-400 bg-white/10 text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors shrink-0">🍔</span>
               <div className="text-left">
                 <span className="block text-[13px] font-black leading-none">Productos</span>
-                <span className="block text-[10px] text-slate-400 mt-0.5">Galería PNG</span>
+                <span className="block text-[10px] text-slate-500 mt-0.5">Galería PNG</span>
               </div>
             </button>
 
             <button type="button" onClick={() => { if(hasPriceImage) { setActiveRightPanel('GALLERY'); setActiveGalleryType('precio'); } }}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${!hasPriceImage ? 'opacity-30 cursor-not-allowed border-transparent text-slate-400' : activeRightPanel === 'GALLERY' && activeGalleryType === 'precio' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${!hasPriceImage ? 'opacity-25 cursor-not-allowed border-transparent text-slate-500' : activeRightPanel === 'GALLERY' && activeGalleryType === 'precio' ? 'border-amber-400 bg-white/10 text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'}`}
               title={!hasPriceImage ? "La plantilla no tiene etiqueta de precio" : "Cambiar precio"}>
-              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:scale-105 transition-transform shrink-0">💲</span>
+              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors shrink-0">💲</span>
               <div className="text-left">
                 <span className="block text-[13px] font-black leading-none">Precio</span>
-                <span className="block text-[10px] text-slate-400 mt-0.5">Imagen precio</span>
+                <span className="block text-[10px] text-slate-500 mt-0.5">Imagen precio</span>
               </div>
             </button>
 
             <button type="button" onClick={() => { if (templateSupportsMenu) handleMenuChange(activeScreenIndex, { ...activeMenu, isMenuMode: !activeMenu.isMenuMode }) }}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${!templateSupportsMenu ? 'opacity-30 cursor-not-allowed border-transparent text-slate-400' : activeMenu.isMenuMode ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${!templateSupportsMenu ? 'opacity-25 cursor-not-allowed border-transparent text-slate-500' : activeMenu.isMenuMode ? 'border-emerald-400 bg-white/10 text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'}`}
               title={!templateSupportsMenu ? "Esta plantilla no tiene diseño de menú configurado" : "Activar/Desactivar Menú"}>
-              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:scale-105 transition-transform shrink-0">📋</span>
+              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors shrink-0">📋</span>
               <div className="text-left">
                 <span className="block text-[13px] font-black leading-none">Menú</span>
-                <span className="block text-[10px] text-slate-400 mt-0.5">{activeMenu.isMenuMode ? 'Activo ✓' : 'Activar'}</span>
+                <span className="block text-[10px] text-slate-500 mt-0.5">{activeMenu.isMenuMode ? 'Activo ✓' : 'Activar'}</span>
               </div>
             </button>
 
             <button type="button" onClick={() => setActiveRightPanel('LAYERS_LIST')}
-              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${activeRightPanel === 'LAYERS_LIST' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 transition-all group border-l-4 ${activeRightPanel === 'LAYERS_LIST' ? 'border-purple-400 bg-white/10 text-white' : 'border-transparent text-slate-400 hover:bg-white/5 hover:text-white'}`}
               title="Posiciones y Capas">
-              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white shadow-sm border border-slate-100 group-hover:scale-105 transition-transform shrink-0">📑</span>
+              <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors shrink-0">📑</span>
               <div className="text-left">
                 <span className="block text-[13px] font-black leading-none">Capas</span>
-                <span className="block text-[10px] text-slate-400 mt-0.5">Organizar orden</span>
+                <span className="block text-[10px] text-slate-500 mt-0.5">Organizar orden</span>
               </div>
             </button>
 
-            <div className="mt-auto px-3 pb-2 pt-4 border-t border-slate-100">
-              <label className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all shadow-md ${hasLogo ? 'bg-slate-100 text-slate-400 opacity-60 cursor-not-allowed grayscale' : 'bg-slate-900 text-white hover:bg-black cursor-pointer hover:-translate-y-0.5'}`}>
-                <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 shrink-0">{customImageLoading ? '⌛' : '☁️'}</span>
+            <div className="mt-auto px-3 pb-2 pt-4 border-t border-slate-800">
+              <label className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all ${hasLogo ? 'bg-white/5 text-slate-600 opacity-50 cursor-not-allowed grayscale' : 'bg-gradient-to-r from-rose-500 to-orange-500 text-white cursor-pointer hover:opacity-90 hover:-translate-y-0.5 shadow-lg shadow-rose-900/40'}`}>
+                <span className="text-xl w-8 h-8 flex items-center justify-center rounded-xl bg-white/20 shrink-0">{customImageLoading ? '⌛' : '☁️'}</span>
                 <div className="text-left">
                   <span className="block text-[13px] font-black leading-none">{customImageLoading ? 'Subiendo...' : 'Subir Logo'}</span>
-                  <span className="block text-[10px] opacity-60 mt-0.5">PNG transparente</span>
+                  <span className="block text-[10px] opacity-70 mt-0.5">PNG transparente</span>
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={e => { if(!hasLogo) handleCustomImageUpload(e, activeScreenIndex) }} disabled={customImageLoading || hasLogo} />
               </label>
             </div>
           </div>
+
 
           {/* PANEL DERECHO: Editor / Galería (AHORA EN EL CENTRO) */}
           <div className="w-full lg:w-[420px] bg-white border-r border-slate-100 flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.02)] z-20">
