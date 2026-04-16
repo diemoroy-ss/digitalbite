@@ -106,6 +106,10 @@ export default function GastronomicoPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
+  // Lead capture Demo Download
+  const [downloadEmail, setDownloadEmail] = useState("");
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+
   const [loadingImg, setLoadingImg] = useState(false);
   const [wantsVideo, setWantsVideo] = useState(false);
   const [loadingVideo, setLoadingVideo] = useState(false);
@@ -821,7 +825,7 @@ export default function GastronomicoPage() {
       {showResultModal && imageUrlWatermark && imageUrlWatermark.length > 0 && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 md:p-6 animate-in fade-in zoom-in-95 duration-300" onClick={() => setShowResultModal(false)}>
           <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto relative flex flex-col gap-0" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowResultModal(false)} className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors z-50">✕</button>
+            <button onClick={() => { setShowResultModal(false); setShowEmailCapture(false); }} className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors z-50">✕</button>
 
             {/* Header */}
             <div className="px-8 pt-8 pb-5 border-b border-slate-100">
@@ -856,6 +860,12 @@ export default function GastronomicoPage() {
                       shouldLoad={idx <= renderingIndex}
                       onLoaded={() => setRenderingIndex(prev => Math.max(prev, idx + 1))}
                     />
+                    {/* DIGITALBITE WATERMARK OVERLAY */}
+                    <img 
+                      src="/logo-digitalbite.png" 
+                      alt="DigitalBite Watermark" 
+                      className="absolute inset-0 m-auto w-[60%] opacity-25 pointer-events-none z-20 mix-blend-multiply grayscale"
+                    />
                     <a href={url} target="_blank" rel="noreferrer"
                       className="absolute bottom-2 right-2 z-30 bg-slate-900/80 hover:bg-slate-900 text-white p-1.5 rounded-lg backdrop-blur-md transition-colors opacity-0 group-hover:opacity-100 shadow-lg">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y2="3" /></svg>
@@ -865,23 +875,61 @@ export default function GastronomicoPage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="px-6 md:px-8 pb-5 flex gap-3">
-              {imageUrlWatermark.length === 1 ? (
-                <a href={imageUrlWatermark[0]} download="banner.jpg" target="_blank" rel="noreferrer"
-                  className="flex-1 py-3.5 bg-slate-800 text-white text-[13px] font-bold rounded-2xl hover:bg-slate-700 transition-all text-center shadow-lg hover:-translate-y-0.5">
-                  Descargar
-                </a>
+            {/* Action Buttons & Lead Capture */}
+            <div className="px-6 md:px-8 pb-5 flex flex-col gap-3">
+              {showEmailCapture ? (
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!downloadEmail) return;
+                  
+                  // Guardar lead de demo en firestore
+                  addDoc(collection(db, "demo_leads"), { email: downloadEmail, date: new Date() }).catch(console.error);
+                  
+                  // Descargar
+                  if (imageUrlWatermark.length === 1) {
+                     const a = document.createElement("a");
+                     a.href = imageUrlWatermark[0];
+                     a.download = "banner.jpg";
+                     a.click();
+                  } else {
+                     imageUrlWatermark.forEach(urlLink => window.open(urlLink, "_blank"));
+                  }
+                  setShowEmailCapture(false);
+                }} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row gap-3 items-center animate-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex-1 w-full relative">
+                    <p className="text-[12px] font-bold text-slate-700 mb-1">¿A qué correo enviamos tu copia?</p>
+                    <input 
+                      type="email" 
+                      required 
+                      value={downloadEmail}
+                      onChange={e => setDownloadEmail(e.target.value)}
+                      placeholder="tu@correo.com" 
+                      className="w-full text-[13px] px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <button type="submit" className="md:mt-5 bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md hover:bg-indigo-700 text-[13px] transition-all w-full md:w-auto">
+                    Descargar Ahora
+                  </button>
+                </form>
               ) : (
-                <button type="button" onClick={() => imageUrlWatermark.forEach((url) => window.open(url, '_blank'))}
-                  className="flex-1 py-3.5 bg-slate-800 text-white text-[13px] font-bold rounded-2xl hover:bg-slate-700 transition-all text-center shadow-lg hover:-translate-y-0.5">
-                  Ver todas ({imageUrlWatermark.length})
-                </button>
+                <div className="flex gap-3 w-full flex-col sm:flex-row">
+                  {imageUrlWatermark.length === 1 ? (
+                    <button type="button" onClick={() => setShowEmailCapture(true)}
+                      className="flex-1 py-3.5 bg-slate-800 text-white text-[13px] font-bold rounded-2xl hover:bg-slate-700 transition-all text-center shadow-lg hover:-translate-y-0.5">
+                      Descargar Borrador
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => setShowEmailCapture(true)}
+                      className="flex-1 py-3.5 bg-slate-800 text-white text-[13px] font-bold rounded-2xl hover:bg-slate-700 transition-all text-center shadow-lg hover:-translate-y-0.5">
+                      Descargar ({imageUrlWatermark.length})
+                    </button>
+                  )}
+                  <button type="button" onClick={() => { setShowResultModal(false); setIsPaymentModalOpen(true); setShowEmailCapture(false); }}
+                    className="flex-1 py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[13px] font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-400/20 hover:-translate-y-0.5">
+                    Sin marca de agua
+                  </button>
+                </div>
               )}
-              <button type="button" onClick={() => { setShowResultModal(false); setIsPaymentModalOpen(true); }}
-                className="flex-1 py-3.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[13px] font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg shadow-orange-400/20 hover:-translate-y-0.5">
-                Sin marca de agua
-              </button>
             </div>
 
             {/* Video Upsell colapsable */}
