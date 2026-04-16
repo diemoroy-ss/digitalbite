@@ -261,7 +261,7 @@ export default function GastronomicoPage() {
           const uDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (uDoc.exists()) {
             let data = uDoc.data();
-            if (currentUser.email === "admin@digitalbite.app" || currentUser.email === "diemondy@gmail.com") {
+            if (currentUser.email === "admin@digitalbite.app" || currentUser.email === "diemondy@gmail.com" || currentUser.email === "gabriel.zarate@gmail.com") {
               data.role = "admin";
             }
             setUserDoc(data);

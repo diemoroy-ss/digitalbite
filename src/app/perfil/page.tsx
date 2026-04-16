@@ -90,7 +90,7 @@ export default function PerfilUsuario() {
            const d = await getDoc(doc(db, "users", user.uid));
            if (d.exists()) {
               const data = d.data() as Perfil;
-              if (user.email === "admin@digitalbite.app" || user.email === "diemondy@gmail.com") {
+              if (user.email === "admin@digitalbite.app" || user.email === "diemondy@gmail.com" || user.email === "gabriel.zarate@gmail.com") {
                  data.role = "admin";
               }
               setPerfil(data);
@@ -108,7 +108,7 @@ export default function PerfilUsuario() {
               setPerfil({
                 name: user.displayName || "Usuario",
                 email: user.email || "",
-                role: (user.email === "admin@digitalbite.app" || user.email === "diemondy@gmail.com") ? "admin" : "user",
+                role: (user.email === "admin@digitalbite.app" || user.email === "diemondy@gmail.com" || user.email === "gabriel.zarate@gmail.com") ? "admin" : "user",
                 plan: "Free",
                 categoriesAllowed: ["all"]
               });
@@ -122,7 +122,7 @@ export default function PerfilUsuario() {
     return () => unsub();
   }, [router]);
 
-  const isAdmin = perfil?.role === "admin" || auth.currentUser?.email === "admin@digitalbite.app" || auth.currentUser?.email === "diemondy@gmail.com";
+  const isAdmin = perfil?.role === "admin" || auth.currentUser?.email === "admin@digitalbite.app" || auth.currentUser?.email === "diemondy@gmail.com" || auth.currentUser?.email === "gabriel.zarate@gmail.com";
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

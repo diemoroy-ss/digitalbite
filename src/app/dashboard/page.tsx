@@ -300,7 +300,7 @@ export default function DashboardPage() {
            let dataDoc = null;
            if (!uDocSnapshot.empty) {
              dataDoc = uDocSnapshot.docs[0].data();
-             if (u.email === "admin@digitalbite.santisoft.cl" || u.email === "diemondy@gmail.com") dataDoc.role = 'admin';
+             if (u.email === "admin@digitalbite.santisoft.cl" || u.email === "diemondy@gmail.com" || u.email === "gabriel.zarate@gmail.com") dataDoc.role = 'admin';
              setUserDoc(dataDoc);
            }
 

@@ -37,7 +37,7 @@ export default function ProfileMenu({ user, userDoc }: ProfileMenuProps) {
   };
 
   const initial = userDoc?.name ? userDoc.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : "U");
-  const isAdmin = userDoc?.role === "admin" || user?.email === "admin@digitalbite.app" || user?.email === "diemondy@gmail.com";
+  const isAdmin = userDoc?.role === "admin" || user?.email === "admin@digitalbite.app" || user?.email === "diemondy@gmail.com" || user?.email === "gabriel.zarate@gmail.com";
   const isInAdmin = pathname?.startsWith("/admin");
 
   return (

@@ -48,7 +48,7 @@ export default function LoginGastronomico() {
     let resolvedRole = "user";
     let isOboardingComplete = false;
     
-    if (user.email === "admin@digitalbite.app" || user.email === "diemondy@gmail.com") {
+    if (user.email === "admin@digitalbite.app" || user.email === "diemondy@gmail.com" || user.email === "gabriel.zarate@gmail.com") {
       resolvedRole = "admin";
       isOboardingComplete = true; // Admin bypass
     }
