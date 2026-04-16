@@ -370,7 +370,7 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
         <p className="text-slate-500 mt-2 text-sm">Arrastra, edita y diseña en tiempo real.</p>
       </div>
 
-      <form onSubmit={onSubmit} className="w-full max-w-[1800px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col min-h-[800px]">
+      <form onSubmit={onSubmit} className="w-full max-w-[1800px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col lg:h-[88vh] min-h-[700px]">
         {renderTabs() && <div className="p-6 border-b border-slate-50 bg-slate-50/30">{renderTabs()}</div>}
 
         <div className="flex flex-col lg:flex-row flex-1 bg-[#fdfdfc] relative">
@@ -405,7 +405,7 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
           </div>
 
           {/* PANEL DERECHO: Editor / Galería (AHORA EN EL CENTRO) */}
-          <div className="w-full lg:w-[380px] bg-white border-r border-slate-100 flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.02)] z-20">
+          <div className="w-full lg:w-[420px] bg-white border-r border-slate-100 flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.02)] z-20">
              <div className="p-6 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between shrink-0">
                 <h3 className="text-[12px] font-black uppercase tracking-widest text-slate-800">
                    {activeRightPanel === 'GALLERY' ? '📦 Galería PNG' : (activeRightPanel === 'TEXTS_LIST' ? '📝 Textos' : activeRightPanel === 'LAYERS_LIST' ? '📑 Capas' : '⚙️ Propiedades')}
@@ -423,9 +423,9 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
              <div className="flex-1 overflow-y-auto p-6 pb-32 custom-scrollbar">
                 {activeRightPanel === 'GALLERY' ? (
                    <div className="flex flex-col gap-6">
-                       <div className="grid grid-cols-2 gap-4">
+                       <div className="grid grid-cols-2 gap-3">
                          {validProducts.map(p => (
-                            <button type="button" key={p.id} onClick={() => setPendingProductToAdd(p.imageUrl)} className="group relative aspect-square bg-slate-50 rounded-[32px] border border-slate-100 p-4 flex items-center justify-center hover:bg-white hover:border-indigo-400 hover:shadow-xl transition-all overflow-hidden pattern-dots">
+                            <button type="button" key={p.id} onClick={() => setPendingProductToAdd(p.imageUrl)} className="group relative aspect-square bg-slate-50 rounded-[28px] border border-slate-100 p-2 flex items-center justify-center hover:bg-white hover:border-indigo-400 hover:shadow-xl transition-all overflow-hidden pattern-dots">
                                <img src={p.imageUrl} className="max-w-full max-h-full object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
                                <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/60 to-transparent translate-y-full group-hover:translate-y-0 transition-transform">
                                   <p className="text-[9px] font-bold text-white truncate">{p.name}</p>
