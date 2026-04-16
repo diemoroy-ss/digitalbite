@@ -1247,7 +1247,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Editor content */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="flex-1 overflow-hidden">
             {customFonts.length > 0 && (
               <style>{customFonts.map(f => f.url.includes("fonts.googleapis.com") ? `@import url('${f.url}');` : `
                 @font-face {

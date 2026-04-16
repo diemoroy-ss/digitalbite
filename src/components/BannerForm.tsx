@@ -362,10 +362,9 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
   };
 
   return (
-    <section className="animate-in fade-in duration-700">
-
-      <form onSubmit={onSubmit} className="w-full max-w-[1800px] mx-auto bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 80px)', minHeight: '640px' }}>
-        {renderTabs() && <div className="p-6 border-b border-slate-50 bg-slate-50/30">{renderTabs()}</div>}
+    <>
+    <form onSubmit={onSubmit} className="w-full bg-white overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 57px)', minHeight: '640px' }}>
+      {renderTabs() && <div className="p-6 border-b border-slate-50 bg-slate-50/30">{renderTabs()}</div>}
 
         <div className="flex flex-col lg:flex-row flex-1 bg-[#fdfdfc] relative">
           
@@ -687,6 +686,6 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
            </div>
         </div>
       )}
-    </section>
+    </>
   );
 }
