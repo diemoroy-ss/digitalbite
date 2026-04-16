@@ -7,6 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProfileMenu from "../../components/ProfileMenu";
+import { useAlertStore } from "../../store/useAlertStore";
 
 // Generator Components
 import CategorySelector from "../../components/CategorySelector";
@@ -374,11 +375,13 @@ export default function DashboardPage() {
       });
       if (!res.ok) throw new Error("Error en webhook");
 
-      alert("¡Animación de video iniciada! Aparecerá automáticamente en esta lista en unos minutos.");
+      // Usamos el sistema de alertas premium con auto-cierre de 6 segundos
+      useAlertStore.getState().openAlert("¡Animación de video iniciada! Aparecerá automáticamente en esta lista en unos minutos.", 'success', 6000);
       setShowResultModal(false);
     } catch (err) {
       console.error(err); 
-      alert("Error al iniciar la generación de video.");
+      // Error no desaparece solo para que el usuario lo vea
+      useAlertStore.getState().openAlert("Error al iniciar la generación de video.", 'error');
       // Revertir estado si falla el inicio
       const renderRef = doc(db, "renders_temporales", renderObj.id);
       await updateDoc(renderRef, { videoStatus: null });
@@ -484,9 +487,9 @@ export default function DashboardPage() {
       setRenderingIndex(0);
       setImageUrlWatermark(urls);
       setShowResultModal(true);
-
     } catch (err) {
-      console.error(err); alert("Hubo un problema al crear la imagen.");
+      console.error(err);
+      useAlertStore.getState().openAlert("Error al guardar el diseño. Inténtalo de nuevo.", 'error');
     } finally { setLoadingImg(false); }
   };
 
