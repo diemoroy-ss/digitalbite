@@ -57,7 +57,7 @@ export default function GastronomicoAdminLayout({ children }: { children: React.
     { href: "/admin/comercios", label: "Comercios", icon: "🏢" },
     { href: "/admin/categorias", label: "Categorías", icon: "🍱" },
     { href: "/admin/plantillas", label: "Plantillas", icon: "🖼️" },
-    { href: "/admin/productos", label: "Galería PNG", icon: "🍔" },
+    { href: "/admin/productos", label: "Productos", icon: "📦" },
     { href: "/admin/planes", label: "Planes", icon: "💳" },
     { href: "/admin/usuarios", label: "Usuarios", icon: "👥" },
     { href: "/admin/workflows", label: "Workflows", icon: "🧠" }
@@ -139,10 +139,8 @@ export default function GastronomicoAdminLayout({ children }: { children: React.
           })}
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-8">
-            {children}
-          </div>
+        <div className="flex-1 overflow-y-auto bg-[#fafafa]">
+          {children}
         </div>
       </main>
     </div>
