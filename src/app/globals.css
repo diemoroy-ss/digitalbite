@@ -34,13 +34,17 @@ html {
 body {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
-  font-size: 14px;
   line-height: 1.7;
   background-color: var(--bg);
   color: var(--text);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Admin and Dashboard pages use 16px base (Tailwind default) */
+.admin-scope, .dashboard-scope {
+  font-size: 16px;
 }
 
 /* ==========================================================================
