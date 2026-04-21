@@ -102,25 +102,6 @@ export default function GastronomicoAdminLayout({ children }: { children: React.
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* GLOBAL TOPBAR (Desktop) */}
-        <header className="hidden md:flex h-20 items-center justify-between px-8 bg-white border-b border-slate-200 sticky top-0 z-[60] shrink-0">
-           <div className="flex flex-col">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">
-                {links.find(l => pathname.startsWith(l.href))?.label || "Administración"}
-              </h2>
-              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                 <span>DigitalBite Admin</span>
-                 <span>/</span>
-                 <span className="text-rose-500">{links.find(l => pathname.startsWith(l.href))?.label || "Escritorio"}</span>
-              </div>
-           </div>
-
-           <div className="flex items-center gap-6">
-              <div className="h-8 w-px bg-slate-100 mx-2" />
-              <ProfileMenu user={user} userDoc={userDoc} />
-           </div>
-        </header>
-
         {/* Mobile Header (Fixed) */}
         <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-[60]">
            <h2 className="text-lg font-black tracking-tight uppercase">⚙️ {links.find(l => pathname.startsWith(l.href))?.label || "GastroAdmin"}</h2>
