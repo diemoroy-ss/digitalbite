@@ -101,11 +101,11 @@ export default function GastronomicoAdminLayout({ children }: { children: React.
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* SLIM TOPBAR (Desktop) - Only profile menu, pages have their own headers */}
-        <header className="hidden md:flex h-14 items-center justify-end px-6 bg-white border-b border-slate-100 shrink-0 z-[60]">
-           <ProfileMenu user={user} userDoc={userDoc} />
-        </header>
+      <main className="flex-1 flex flex-col min-h-screen overflow-hidden relative">
+        {/* PROFILE MENU - Fixed floating button in top-right (desktop only) */}
+        <div className="hidden md:block fixed top-4 right-4 z-[200]">
+          <ProfileMenu user={user} userDoc={userDoc} />
+        </div>
 
         {/* Mobile Header (Fixed) */}
         <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-[60]">
