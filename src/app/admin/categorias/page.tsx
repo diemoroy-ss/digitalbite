@@ -226,21 +226,21 @@ export default function CategoriasAdmin() {
                    </div>
                 </div>
 
-                <div className="mt-auto">
-                   <h3 className="font-black text-slate-800 text-xl leading-tight mb-1">{cat.name}</h3>
-                   <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 uppercase tracking-widest leading-none">
+                <div className="mt-auto pt-6">
+                   <h3 className="font-black text-slate-800 text-2xl leading-tight mb-3">{cat.name}</h3>
+                   <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 uppercase tracking-widest">
                         {comercios.find(c => c.slug === (cat.comercioId || 'gastronomico'))?.name || "Premium"}
                       </span>
                    </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
-                   <div className="flex flex-col">
-                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-tight">Identificador</span>
-                      <span className="text-[10px] font-mono font-bold text-indigo-500">{cat.slug}</span>
+                <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+                   <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identificador</span>
+                      <span className="text-xs font-mono font-bold text-indigo-500">{cat.slug}</span>
                    </div>
-                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
               </div>
             ))}

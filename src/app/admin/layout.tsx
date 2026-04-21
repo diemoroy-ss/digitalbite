@@ -74,14 +74,14 @@ export default function GastronomicoAdminLayout({ children }: { children: React.
           <p className="text-slate-400 text-xs mt-1">Panel de Control V2</p>
         </div>
         
-        <nav className="flex-1 py-6 px-4 space-y-1">
+        <nav className="flex-1 py-6 px-4 space-y-3">
           {links.map(link => {
             const isActive = pathname.startsWith(link.href);
             return (
               <Link 
                 key={link.href} 
                 href={link.href}
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-colors font-semibold text-sm ${
+                className={`flex items-center gap-4 px-5 py-4 rounded-xl transition-colors font-semibold text-sm ${
                   isActive 
                   ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'

@@ -296,7 +296,7 @@ export default function ProductosAdmin() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           
           <div className="flex items-center gap-3">
-             <div className="flex bg-slate-100 p-1 rounded-2xl overflow-hidden border border-slate-200">
+             <div className="flex bg-slate-100 p-1 rounded-2xl overflow-hidden border border-slate-200 gap-1">
                <button 
                  onClick={() => { setFilterComercio("todos"); setActiveDashboardCat("todos"); }}
                  className={`px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all ${filterComercio === 'todos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -391,9 +391,9 @@ export default function ProductosAdmin() {
                    </div>
 
                    {/* Info Bar */}
-                   <div className="bg-white p-4 pt-1 border-t border-slate-50 text-center relative z-10">
-                      <h3 className="font-black text-slate-800 text-xs truncate mb-2 uppercase tracking-tight">{product.name}</h3>
-                      <div className="flex gap-1.5 justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                   <div className="bg-white p-5 pt-3 border-t border-slate-50 text-center relative z-10">
+                      <h3 className="font-black text-slate-800 text-sm truncate mb-3 uppercase tracking-tight">{product.name}</h3>
+                      <div className="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                          <button 
                            onClick={() => openEditDrawer(product)}
                            className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
@@ -410,12 +410,12 @@ export default function ProductosAdmin() {
                    </div>
 
                    {/* Badges */}
-                   <div className="absolute top-3 left-3 flex flex-col gap-1 z-20 pointer-events-none">
-                      <div className="bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-lg text-[9px] font-black border border-slate-100 shadow-sm text-slate-400 uppercase tracking-widest">
+                   <div className="absolute top-4 left-4 flex flex-col gap-2 z-20 pointer-events-none">
+                      <div className="bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black border border-slate-100 shadow-sm text-slate-500 uppercase tracking-widest">
                          {product.category}
                       </div>
                       {imagesCount > 0 && (
-                         <div className="bg-indigo-500/90 backdrop-blur-md px-2 py-0.5 rounded-lg text-[9px] font-black border border-indigo-400 shadow-sm text-white uppercase tracking-widest w-max">
+                         <div className="bg-indigo-500/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-black border border-indigo-400 shadow-sm text-white uppercase tracking-widest w-max">
                             {imagesCount} {imagesCount === 1 ? 'img' : 'imgs'}
                          </div>
                       )}
