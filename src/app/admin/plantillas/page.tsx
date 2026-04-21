@@ -59,6 +59,7 @@ interface Plantilla {
   defaultMenuDataHorizontal?: any;
   layouts?: Record<string, Record<string, { layers: any[], menuData: any }>>;
   isPremium?: boolean;
+  isFeaturedOnLanding?: boolean;
 }
 
 export default function PlantillasAdmin() {
@@ -94,6 +95,7 @@ export default function PlantillasAdmin() {
   const [colors, setColors] = useState(["#ffffff", "#f97316", "#1e293b"]);
   const [fonts, setFonts] = useState(["Inter", "Bebas Neue", "Montserrat"]);
   const [isPremium, setIsPremium] = useState(false);
+  const [isFeaturedOnLanding, setIsFeaturedOnLanding] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -164,7 +166,7 @@ export default function PlantillasAdmin() {
     try {
       setSaving(true);
       
-      const updateData: any = { name, categories: selectedCategories, colors, fonts, comercioId: comercioId || "gastronomico", isPremium };
+      const updateData: any = { name, categories: selectedCategories, colors, fonts, comercioId: comercioId || "gastronomico", isPremium, isFeaturedOnLanding };
 
       // Helper to upload a specific file
       const uploadFile = async (f: File, type: string) => {
@@ -245,6 +247,7 @@ export default function PlantillasAdmin() {
     setColors(p.colors || ["#ffffff", "#f97316", "#1e293b"]);
     setFonts(p.fonts || ["Inter", "Bebas Neue", "Montserrat"]);
     setIsPremium(p.isPremium || false);
+    setIsFeaturedOnLanding(p.isFeaturedOnLanding || false);
     setFileVertical(null);
     setFilePost(null);
     setFileHorizontal(null);
@@ -279,6 +282,7 @@ export default function PlantillasAdmin() {
      setFonts(["Inter", "Bebas Neue", "Montserrat"]);
      setComercioId("gastronomico");
      setIsPremium(false);
+     setIsFeaturedOnLanding(false);
      setIsDrawerOpen(false);
      
      ['file-vertical', 'file-post', 'file-horizontal'].forEach(id => {
@@ -548,6 +552,27 @@ export default function PlantillasAdmin() {
                      </label>
                   </div>
                 </details>
+
+                {/* 5. VISIBILIDAD */}
+                <details className="group border border-slate-200 rounded-xl bg-white overflow-hidden">
+                  <summary className="flex items-center justify-between p-4 cursor-pointer bg-slate-50/50 hover:bg-slate-50 font-bold text-sm text-slate-800 select-none">
+                    <span>5. Visibilidad (Landing Page)</span>
+                    <span className="transition group-open:rotate-180">▼</span>
+                  </summary>
+                  <div className="p-4 pt-2 border-t border-slate-100 bg-white">
+                     <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-indigo-50 bg-indigo-50/50 hover:bg-indigo-100/50">
+                        <div className="relative">
+                          <input type="checkbox" className="sr-only" checked={isFeaturedOnLanding} onChange={e => setIsFeaturedOnLanding(e.target.checked)} />
+                          <div className={`block w-10 h-6 pl-1 rounded-full border-2 transition-colors ${isFeaturedOnLanding ? 'bg-indigo-500 border-indigo-500' : 'bg-slate-200 border-slate-200'}`}></div>
+                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isFeaturedOnLanding ? 'transform translate-x-4' : ''}`}></div>
+                        </div>
+                        <div className="flex flex-col">
+                           <span className="text-sm font-bold text-indigo-700 flex items-center gap-1">🌟 Destacar en Landing Page</span>
+                           <span className="text-[10px] text-slate-500">Aparecerá en la galería animada de inicio (como Demo).</span>
+                        </div>
+                     </label>
+                  </div>
+                </details>
               </form>
             </div>
             
@@ -687,6 +712,11 @@ export default function PlantillasAdmin() {
                                  {p.isPremium && (
                                    <div className="absolute top-2 left-2 z-20 pointer-events-none bg-amber-500 text-white text-[10px] px-2 py-1 rounded-lg font-black uppercase tracking-widest shadow-lg shadow-amber-500/40 border border-amber-400">
                                       ⭐ Premium
+                                   </div>
+                                 )}
+                                 {p.isFeaturedOnLanding && (
+                                   <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none bg-indigo-500 text-white text-[10px] px-2 py-1 rounded-lg font-black uppercase tracking-widest shadow-lg shadow-indigo-500/40 border border-indigo-400">
+                                      🌟 En Landing
                                    </div>
                                  )}
                               </div>

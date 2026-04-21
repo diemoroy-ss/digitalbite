@@ -63,7 +63,7 @@ export default function HeroCarousel() {
   if (!loaded) {
     return (
       <div className="w-full max-w-[320px] mx-auto">
-        <div className="aspect-[9/16] rounded-3xl bg-slate-200 animate-pulse" />
+        <div className="aspect-[9/16] rounded-3xl animate-pulse" style={{ background: 'rgba(240,237,230,0.04)', border: '0.5px solid rgba(240,237,230,0.08)' }} />
       </div>
     );
   }
@@ -71,8 +71,11 @@ export default function HeroCarousel() {
   if (items.length === 0) {
     return (
       <div className="w-full max-w-[320px] mx-auto">
-        <div className="aspect-[9/16] rounded-3xl bg-gradient-to-b from-slate-800 to-slate-900 flex items-center justify-center">
-          <span className="text-6xl">🎨</span>
+        <div className="aspect-[9/16] rounded-3xl flex items-center justify-center" style={{ background: 'rgba(200,240,96,0.04)', border: '0.5px solid rgba(200,240,96,0.15)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🎨</div>
+            <p style={{ fontSize: 11, color: 'rgba(240,237,230,0.3)' }}>Cargando renders...</p>
+          </div>
         </div>
       </div>
     );
@@ -82,13 +85,14 @@ export default function HeroCarousel() {
     <div className="flex flex-col items-center gap-4 w-full max-w-[320px] mx-auto select-none">
       {/* Teléfono / Marco */}
       <div
-        className="relative w-full aspect-[9/16] rounded-[32px] overflow-hidden shadow-2xl shadow-slate-400/40 border-4 border-slate-100 cursor-pointer bg-slate-900"
+        className="relative w-full aspect-[9/16] rounded-[32px] overflow-hidden cursor-pointer"
+        style={{ background: '#0E0D0B', border: '0.5px solid rgba(240,237,230,0.1)' }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
         {/* Badge DEMO */}
-        <div className="absolute top-3 left-3 z-20 bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full tracking-widest uppercase shadow-md">
-          ✨ RENDER RRSS
+        <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 20, background: 'rgba(200,240,96,0.15)', border: '0.5px solid rgba(200,240,96,0.3)', color: '#C8F060', fontSize: 10, fontWeight: 500, padding: '3px 10px', borderRadius: 100, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          Render real
         </div>
 
         {items.map((item, i) => (
@@ -135,11 +139,16 @@ export default function HeroCarousel() {
             <button
               key={i}
               onClick={() => goTo(i)}
-              className={`rounded-full transition-all duration-300 ${
-                i === current
-                  ? "w-6 h-2.5 bg-indigo-600"
-                  : "w-2.5 h-2.5 bg-slate-300 hover:bg-slate-400"
-              }`}
+              style={{
+                borderRadius: 100,
+                transition: 'all 0.3s',
+                width: i === current ? 24 : 8,
+                height: 8,
+                background: i === current ? '#C8F060' : 'rgba(240,237,230,0.2)',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
               aria-label={`Ir a imagen ${i + 1}`}
             />
           ))}

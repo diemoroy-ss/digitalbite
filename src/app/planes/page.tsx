@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { db } from "../../lib/firebase";
 import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { LandingTemplateGalleryClient } from "../../components/LandingClientWrappers";
 
 interface Plan {
   id: string;
@@ -108,6 +109,23 @@ export default function PlanesGastronomicosPage() {
               ))}
             </div>
           )}
+
+          {/* GALERÍA DE PREVIEWS EN PLANES */}
+          <div className="mt-32 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="text-center mb-12">
+               <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full border font-black text-xs uppercase mb-4 tracking-widest bg-emerald-50 border-emerald-200 text-emerald-600">
+                 Galería de Resultados
+               </div>
+               <h2 className="font-black text-slate-900 leading-[1.1] text-3xl md:text-5xl tracking-tight mb-4">
+                 Calidad <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500">premium asegurada</span>.
+               </h2>
+               <p className="text-slate-500 text-lg font-medium mx-auto max-w-xl">Echa un vistazo a los diseños que podrás crear en segundos con nuestras herramientas con IA.</p>
+            </div>
+            
+            <div className="bg-[#0E0D0B] rounded-[40px] p-8 md:p-12 shadow-2xl overflow-hidden border-4 border-slate-900">
+              <LandingTemplateGalleryClient />
+            </div>
+          </div>
         </main>
       </div>
     </div>
