@@ -299,7 +299,7 @@ export default function ProductosAdmin() {
              <div className="flex bg-slate-100 p-1 rounded-2xl overflow-hidden border border-slate-200">
                <button 
                  onClick={() => { setFilterComercio("todos"); setActiveDashboardCat("todos"); }}
-                 className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all ${filterComercio === 'todos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                 className={`px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all ${filterComercio === 'todos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                >
                  Todos
                </button>
@@ -307,7 +307,7 @@ export default function ProductosAdmin() {
                  <button 
                    key={c.id}
                    onClick={() => { setFilterComercio(c.slug); setActiveDashboardCat("todos"); }}
-                   className={`px-4 py-2 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-2 ${filterComercio === c.slug ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                   className={`px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all flex items-center gap-2 ${filterComercio === c.slug ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                  >
                    <span>{c.icon || "🏢"}</span> {c.name}
                  </button>
@@ -328,7 +328,7 @@ export default function ProductosAdmin() {
            <div className="max-w-7xl mx-auto mt-4 pt-4 border-t border-slate-100 flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
              <button
                 onClick={() => setActiveDashboardCat("todos")}
-                className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border ${activeDashboardCat === 'todos' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
+                className={`whitespace-nowrap px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${activeDashboardCat === 'todos' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
              >
                 Ver Todo
              </button>
@@ -338,10 +338,10 @@ export default function ProductosAdmin() {
                  <button
                    key={cat.id}
                    onClick={() => setActiveDashboardCat(cat.slug)}
-                   className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 ${activeDashboardCat === cat.slug ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
+                   className={`whitespace-nowrap px-5 py-2.5 rounded-xl text-sm font-bold transition-all border flex items-center gap-2 ${activeDashboardCat === cat.slug ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-500 border-slate-100 hover:border-slate-300'}`}
                  >
                    {cat.name}
-                   <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${activeDashboardCat === cat.slug ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                   <span className={`text-xs px-1.5 py-0.5 rounded-md ${activeDashboardCat === cat.slug ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'}`}>
                      {products.filter(p => p.category === cat.slug && (p.comercioId || "gastronomico") === filterComercio).length}
                    </span>
                  </button>
