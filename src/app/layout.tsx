@@ -49,6 +49,7 @@ export const viewport: Viewport = {
 };
 
 import MainWrapper from "../components/MainWrapper";
+import AnalyticsProvider from "../components/AnalyticsProvider";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -65,9 +66,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className="antialiased min-h-screen flex flex-col" style={{ background: '#0E0D0B', color: '#F0EDE6' }}>
         <Navbar />
-        <MainWrapper>
-          {children}
-        </MainWrapper>
+        <AnalyticsProvider>
+          <MainWrapper>
+            {children}
+          </MainWrapper>
+        </AnalyticsProvider>
         <AlertModal />
         <Footer />
       </body>

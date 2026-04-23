@@ -286,20 +286,33 @@ export default function ProductosAdmin() {
     const matchesComercio = filterComercio === "todos" || (p.comercioId || "gastronomico") === filterComercio;
     const matchesCategory = activeDashboardCat === "todos" || p.category === activeDashboardCat;
     return matchesComercio && matchesCategory;
-  });
-
-  return (
+  });  return (
     <div className="min-h-screen bg-[#fafafa] relative overflow-x-hidden">
       
+      {/* HEADER PRINCIPAL CON BOTÓN DE CREACIÓN */}
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Catálogo de Productos</h1>
+          <p className="text-slate-500 font-medium">Sube y gestiona las imágenes con transparencia para tus diseños.</p>
+        </div>
+        <button 
+          onClick={openCreateDrawer}
+          className="h-14 px-8 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-95 group"
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-300">+</span> 
+          <span>NUEVO PRODUCTO</span>
+        </button>
+      </div>
+
       {/* HEADER SECTION (Stepper & Breadcrumbs) */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-6 py-5 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-md border-y border-slate-200 sticky top-0 z-30 px-6 py-5 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
           
-          <div className="flex items-center gap-3">
-             <div className="flex bg-slate-100 p-1 rounded-2xl overflow-hidden border border-slate-200 gap-1">
+          <div className="flex items-center gap-3 w-full">
+             <div className="flex bg-slate-100 p-1 rounded-2xl overflow-hidden border border-slate-200 gap-1 w-full md:w-auto">
                <button 
                  onClick={() => { setFilterComercio("todos"); setActiveDashboardCat("todos"); }}
-                 className={`px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all ${filterComercio === 'todos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                 className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all ${filterComercio === 'todos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                >
                  Todos
                </button>
@@ -307,19 +320,12 @@ export default function ProductosAdmin() {
                  <button 
                    key={c.id}
                    onClick={() => { setFilterComercio(c.slug); setActiveDashboardCat("todos"); }}
-                   className={`px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all flex items-center gap-2 ${filterComercio === c.slug ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                   className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-sm font-black uppercase transition-all flex items-center justify-center gap-2 ${filterComercio === c.slug ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                  >
                    <span>{c.icon || "🏢"}</span> {c.name}
                  </button>
                ))}
              </div>
-
-             <button 
-               onClick={openCreateDrawer}
-               className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-slate-900/10 flex items-center gap-2 transition-all hover:-translate-y-0.5 active:scale-95"
-             >
-               <span>+</span> Nuevo Producto
-             </button>
           </div>
         </div>
         

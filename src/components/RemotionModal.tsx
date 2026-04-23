@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { DynamicTemplate } from '../remotion/DynamicTemplate';
 import type { TextLayer, RemotionTemplateProps, AnimationType } from '../remotion/types';
+import { trackEvent } from '../lib/analytics';
 
 interface RemotionModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function RemotionModal({ isOpen, onClose, imageUrl, layers, forma
 
     try {
       setIsRendering(true);
+      trackEvent('video_generated', { formato, animationType });
       const player = playerRef.current;
       
       // 1. Ir al inicio

@@ -83,7 +83,7 @@ export default function PlantillasAdmin() {
   
   const [filterComercio, setFilterComercio] = useState("todos");
   const [filterCat, setFilterCat] = useState("todas");
-  const [filterFormat, setFilterFormat] = useState("tv_v");
+  const [filterFormat, setFilterFormat] = useState(""); // Empezar sin selección para forzar el stepper
   const [editId, setEditId] = useState<string|null>(null);
   const [previewImage, setPreviewImage] = useState<{url: string, template: Plantilla}|null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -440,7 +440,22 @@ export default function PlantillasAdmin() {
   });
 
   return (
-    <div className="w-full px-4 md:px-6 lg:px-8 py-6 max-w-7xl mx-auto h-screen overflow-y-auto">
+    <div className="w-full px-4 md:px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+      {/* HEADER PRINCIPAL CON BOTÓN DE CREACIÓN */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Plantillas Visuales</h1>
+          <p className="text-slate-500 font-medium">Gestiona y diseña las estructuras visuales para los comercios.</p>
+        </div>
+        <button 
+          onClick={() => { resetForm(); setIsDrawerOpen(true); }} 
+          className="h-14 px-8 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-95 group"
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-300">+</span> 
+          <span>CREAR NUEVA PLANTILLA</span>
+        </button>
+      </div>
+
       {customFonts.length > 0 && (
          <style>{customFonts.map(f => f.url.includes("fonts.googleapis.com") ? `@import url('${f.url}');` : `
            @font-face {
@@ -472,18 +487,13 @@ export default function PlantillasAdmin() {
          <div className="shrink-0 text-slate-300 font-black hidden md:block pt-5">➔</div>
          <div className="flex-1 w-full relative">
             <label className="block text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1.5 ml-1">Paso 3: Formato</label>
-            <select value={filterFormat} onChange={(e) => setFilterFormat(e.target.value)} disabled={filterCat === "todas" && filterComercio !== "todos"} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500 disabled:opacity-50 transition-colors">
-               <option value="todos">Todos los Formatos</option>
+            <select value={filterFormat} onChange={(e) => setFilterFormat(e.target.value)} disabled={filterCat === "todas"} className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500 disabled:opacity-50 transition-colors">
+               <option value="">📏 Seleccionar Formato...</option>
+               <option value="todos">🗂️ Ver Todos los Formatos</option>
                <option value="tv_v">📱 Story / Vertical</option>
                <option value="tv_h">📺 TV Horizontal</option>
                <option value="post">⏹️ Post Cuadrado</option>
             </select>
-         </div>
-         
-         <div className="shrink-0 pt-5">
-            <button onClick={() => { resetForm(); setIsDrawerOpen(true); }} className="h-11 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 whitespace-nowrap">
-               <span>+</span> Crear
-            </button>
          </div>
       </div>
       
@@ -495,7 +505,7 @@ export default function PlantillasAdmin() {
             {filterComercio !== "todos" && <span className="text-indigo-300">/</span>}
             {filterComercio !== "todos" && <span className="font-black">{filterCat === "todas" ? "Todas las Categorías" : categorias.find(c => c.slug === filterCat)?.name}</span>}
             {filterCat !== "todas" && filterComercio !== "todos" && <span className="text-indigo-300">/</span>}
-            {filterCat !== "todas" && filterComercio !== "todos" && <span className="font-black">{filterFormat === "tv_v" ? "Vertical" : filterFormat === "tv_h" ? "Horizontal" : filterFormat === "post" ? "Cuadrado" : "Todos los Formatos"}</span>}
+            {filterCat !== "todas" && filterComercio !== "todos" && <span className="font-black">{filterFormat === "tv_v" ? "Vertical" : filterFormat === "tv_h" ? "Horizontal" : filterFormat === "post" ? "Cuadrado" : filterFormat === "todos" ? "Todos los Formatos" : "Esperando Formato..."}</span>}
          </div>
          <a href="/admin/fuentes" className="shrink-0 flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold px-4 py-2 rounded-xl border border-slate-200 transition-colors text-sm shadow-sm">
            <span aria-hidden="true">🔤</span> Gestionar Fuentes

@@ -5,6 +5,7 @@ import { auth, db, googleProvider } from "../../lib/firebase";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { trackEvent } from "../../lib/analytics";
 
 export default function LoginGastronomico() {
   const [isRegister, setIsRegister] = useState(false);
@@ -17,6 +18,7 @@ export default function LoginGastronomico() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const router = useRouter();
 
   // Redirigir si ya está logeado
@@ -28,13 +30,17 @@ export default function LoginGastronomico() {
         if (userDoc.exists()) {
           const data = userDoc.data();
           if (data.role === "admin" || user.email === "admin@digitalbite.app") {
-            router.push("/admin/plantillas");
+            router.replace("/admin/plantillas");
           } else if (data.onboardingCompleted) {
-            router.push("/dashboard");
+            router.replace("/dashboard");
           } else {
-            router.push("/onboarding");
+            router.replace("/onboarding");
           }
+        } else {
+           setIsAuthChecking(false);
         }
+      } else {
+        setIsAuthChecking(false);
       }
     });
     return () => unsubscribe();
@@ -107,6 +113,7 @@ export default function LoginGastronomico() {
       } else {
         // LOGIN FLOW
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        trackEvent('login', { method: 'email' });
         
         // Require Email Verification
         if (!userCredential.user.emailVerified) {
@@ -162,6 +169,17 @@ export default function LoginGastronomico() {
       setLoading(false);
     }
   };
+
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 bg-slate-900 text-white rounded-[20px] flex items-center justify-center text-3xl mb-4 animate-bounce shadow-xl shadow-slate-900/20">
+          🍔
+        </div>
+        <p className="text-slate-400 text-sm font-bold animate-pulse">Verificando sesión...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">

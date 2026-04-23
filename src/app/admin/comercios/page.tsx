@@ -127,19 +127,30 @@ export default function ComerciosAdmin() {
   return (
     <div className="min-h-screen bg-[#fafafa] relative overflow-x-hidden animate-in fade-in duration-500">
       
+      {/* HEADER PRINCIPAL CON BOTÓN DE CREACIÓN */}
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Comercios</h1>
+          <p className="text-slate-500 font-medium">Gestiona las verticales de negocio y sectores de la plataforma.</p>
+        </div>
+        <button 
+          onClick={openCreateDrawer}
+          className="h-14 px-8 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-95 group"
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-300">+</span> 
+          <span>NUEVO COMERCIO</span>
+        </button>
+      </div>
+
       {/* HEADER SECTION (Sticky Sub-Bar) */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-6 py-5 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white/80 backdrop-blur-md border-y border-slate-200 sticky top-0 z-30 px-6 py-5 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Sectores Disponibles</h2>
-            <p className="text-xs text-slate-400 mt-1">Gestiona las verticales de negocio de la plataforma.</p>
+            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+               Sectores Activos
+            </h2>
           </div>
-          <button 
-            onClick={openCreateDrawer}
-            className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3.5 rounded-2xl font-black text-sm shadow-xl shadow-slate-900/10 flex items-center gap-2 transition-all hover:-translate-y-0.5 active:scale-95"
-          >
-            <span>+</span> Nuevo Comercio
-          </button>
         </div>
       </div>
 

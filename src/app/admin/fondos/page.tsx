@@ -188,30 +188,37 @@ export default function FondosAdmin() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] animate-in fade-in duration-500">
+      
+      {/* HEADER PRINCIPAL CON BOTÓN DE CREACIÓN */}
+      <div className="max-w-7xl mx-auto px-6 pt-10 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Librería de Fondos</h1>
+          <p className="text-slate-500 font-medium">Gestiona y sube activos visuales base para tus plantillas.</p>
+        </div>
+        <button 
+          onClick={() => { resetForm(); setIsDrawerOpen(true); }}
+          className="h-14 px-8 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 transition-all flex items-center justify-center gap-3 hover:-translate-y-1 active:scale-95 group"
+        >
+          <span className="text-xl group-hover:rotate-90 transition-transform duration-300">+</span> 
+          <span>SUBIR NUEVO FONDO</span>
+        </button>
+      </div>
+
       {/* Header Bar */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-6 py-5">
+      <div className="bg-white/80 backdrop-blur-md border-y border-slate-200 sticky top-0 z-30 px-6 py-5 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Gestión de Fondos</h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Librería de activos base para plantillas</p>
-          </div>
-          
           <div className="flex items-center gap-4 w-full md:w-auto">
-            <select 
-              value={filterFormat} 
-              onChange={(e) => setFilterFormat(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-black text-slate-700 outline-none focus:border-rose-300 transition-all flex-1 md:flex-none"
-            >
-              <option value="todos">🎂 Todos los Formatos</option>
-              {FORMATS.map(f => <option key={f.id} value={f.id}>{f.icon} {f.label}</option>)}
-            </select>
-            
-            <button 
-              onClick={() => { resetForm(); setIsDrawerOpen(true); }}
-              className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl flex items-center gap-2 transition-all active:scale-95"
-            >
-              <span>+</span> Subir Fondo
-            </button>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">Filtrar por Formato</span>
+              <select 
+                value={filterFormat} 
+                onChange={(e) => setFilterFormat(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-black text-slate-700 outline-none focus:border-rose-300 transition-all min-w-[220px] shadow-sm appearance-none cursor-pointer"
+              >
+                <option value="todos">🎂 Todos los Formatos</option>
+                {FORMATS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+              </select>
+            </div>
           </div>
         </div>
       </div>
