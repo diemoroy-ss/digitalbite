@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { storage, db, auth } from "../lib/firebase";
 import TextLayerEditor, { TextLayer, createLayer, createImageLayer, LayerType, ActiveLayerPropertiesPanel } from "./TextLayerEditor";
+import RemotionModal from "./RemotionModal";
 
 const IconStore    = () => <span>🏪</span>;
 const IconType     = () => <span>🔤</span>;
@@ -222,6 +223,7 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
   const [activeGalleryType, setActiveGalleryType] = useState<'producto' | 'precio'>('producto');
   const [galleryCategory, setGalleryCategory] = useState<string>('todas');
   const [isUploadingProduct, setIsUploadingProduct] = useState(false);
+  const [isRemotionModalOpen, setIsRemotionModalOpen] = useState(false);
 
   const currentLayoutId = formData.menusByScreen?.[activeScreenIndex]?.layoutId || (selectedLayoutObj as any)?.id;
   const currentScreenLayoutObj = validLayouts?.find(l => l.id === currentLayoutId) || selectedLayoutObj;
@@ -583,7 +585,15 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
              </div>
 
              {/* ACCIONES FINALES */}
-             <div className="p-8 bg-white border-t border-slate-50 shadow-inner">
+             <div className="p-8 bg-white border-t border-slate-50 shadow-inner flex flex-col gap-3">
+                <button 
+                   type="button" 
+                   onClick={() => setIsRemotionModalOpen(true)}
+                   className="w-full py-4 rounded-2xl border-2 border-[#C8F060] bg-slate-900 text-[#C8F060] font-black text-sm tracking-wide transition-all shadow-md hover:-translate-y-0.5 hover:shadow-[#C8F060]/20 flex items-center justify-center gap-2"
+                >
+                   ✨ VISTA PREVIA ANIMADA
+                </button>
+
                 {userDoc?.role === "admin" || (userDoc && (userDoc?.generationCount || 0) < (userDoc?.generationLimit || 0)) ? (
                    <button type="submit" disabled={loadingImg} className={`w-full py-5 rounded-3xl font-black text-sm tracking-wide transition-all shadow-xl hover:-translate-y-1 ${loadingImg ? 'bg-slate-100 text-slate-400' : 'bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-rose-200'}`}>
                       {loadingImg ? '🪄 GENERANDO HD...' : '🚀 EXPORTAR DISEÑO FINAL'}
@@ -627,7 +637,7 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
                              setActiveRightPanel('PROPERTIES');
                          }
                      }} 
-                     formato={formData.formato} 
+                     formato={formData.formato as "story" | "post" | "tv_h"} 
                      menuData={activeMenu}
                      onMenuChange={(d) => handleMenuChange(activeScreenIndex, d)}
                      templateColors={currentScreenLayoutObj?.colors}
@@ -641,7 +651,7 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
                          }
                          setActiveRightPanel('GALLERY');
                      }}
-                     customFontsList={customFonts?.map(f => f.name)}
+                     customFonts={customFonts?.map(f => f.name)}
                    />
                 ) : (
                    <div className="p-20 text-slate-400 font-bold italic">Selecciona un formato válido</div>
@@ -687,6 +697,16 @@ export default function BannerForm({ formData, setFormData, handleImg, loadingIm
            </div>
         </div>
       )}
+
+      {/* MODAL REMOTION VISTA PREVIA */}
+      <RemotionModal
+         isOpen={isRemotionModalOpen}
+         onClose={() => setIsRemotionModalOpen(false)}
+         imageUrl={previewUrl}
+         layers={activeLayers}
+         formato={formData.formato}
+         menuData={activeMenu}
+      />
     </>
   );
 }

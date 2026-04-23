@@ -4,7 +4,7 @@ import { useAlertStore } from "../store/useAlertStore";
 import { useEffect, useState } from "react";
 
 export default function AlertModal() {
-  const { isOpen, message, type, closeAlert } = useAlertStore();
+  const { isOpen, message, type, closeAlert, isConfirm, onConfirm, onCancel, confirmText, cancelText, hasInput, inputValue, setInputValue } = useAlertStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -96,17 +96,56 @@ export default function AlertModal() {
         </h3>
 
         {/* Message */}
-        <p className="text-slate-500 font-medium leading-relaxed text-sm whitespace-pre-wrap max-w-xs">
+        <p className="text-slate-500 font-medium leading-relaxed text-sm whitespace-pre-wrap max-w-xs transition-all">
           {message}
         </p>
+
+        {/* Input Field (Optional) */}
+        {hasInput && (
+          <div className="w-full mt-6 animate-in slide-in-from-bottom-2 duration-300">
+            <input 
+              type="text" 
+              value={inputValue} 
+              onChange={(e) => setInputValue(e.target.value)}
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-center"
+              placeholder="Escribe aquí..."
+              autoFocus
+            />
+          </div>
+        )}
         
-        {/* Action Button */}
-        <button 
-          onClick={closeAlert}
-          className={`mt-8 w-full py-4 rounded-2xl font-black text-white ${config.accent} hover:brightness-110 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2`}
-        >
-          Entendido
-        </button>
+        {/* Combined Action Buttons */}
+        <div className={`mt-8 w-full flex ${isConfirm ? 'flex-col sm:flex-row gap-3' : 'flex-col'}`}>
+          {isConfirm ? (
+            <>
+              <button 
+                onClick={() => {
+                  if (onCancel) onCancel();
+                  closeAlert();
+                }}
+                className="flex-1 py-4 rounded-2xl font-black text-slate-500 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] transition-all flex items-center justify-center"
+              >
+                {cancelText}
+              </button>
+              <button 
+                onClick={() => {
+                  if (onConfirm) onConfirm();
+                  closeAlert();
+                }}
+                className={`flex-[1.5] py-4 rounded-2xl font-black text-white ${config.accent} hover:brightness-110 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2`}
+              >
+                {confirmText}
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={closeAlert}
+              className={`w-full py-4 rounded-2xl font-black text-white ${config.accent} hover:brightness-110 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2`}
+            >
+              Entendido
+            </button>
+          )}
+        </div>
 
         {/* Brand signature */}
         <div className="mt-6 flex items-center gap-1.5 opacity-20">

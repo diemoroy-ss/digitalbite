@@ -55,8 +55,9 @@ export default function GastronomicoAdminLayout({ children }: { children: React.
 
   const links = [
     { href: "/admin/comercios", label: "Comercios", icon: "🏢" },
+    { href: "/admin/fondos", label: "Fondos", icon: "🖼️" },
     { href: "/admin/categorias", label: "Categorías", icon: "🍱" },
-    { href: "/admin/plantillas", label: "Plantillas", icon: "🖼️" },
+    { href: "/admin/plantillas", label: "Plantillas", icon: "🎨" },
     { href: "/admin/productos", label: "Productos", icon: "📦" },
     { href: "/admin/planes", label: "Planes", icon: "💳" },
     { href: "/admin/usuarios", label: "Usuarios", icon: "👥" },

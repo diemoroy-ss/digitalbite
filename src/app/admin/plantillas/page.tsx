@@ -6,7 +6,9 @@ import { collection, addDoc, getDocs, deleteDoc, updateDoc, doc, serverTimestamp
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import Image from "next/image";
 import TemplateBuilderModal from "../../../components/TemplateBuilderModal";
+import TemplateBaseEditorModal from "../../../components/TemplateBaseEditorModal";
 import { TextLayer } from "../../../components/TextLayerEditor";
+import { useAlertStore } from "../../../store/useAlertStore";
 
 // Fuentes comunes
 const FONTS = [
@@ -62,11 +64,20 @@ interface Plantilla {
   isFeaturedOnLanding?: boolean;
 }
 
+interface Background {
+  id: string;
+  name: string;
+  url: string;
+  storagePath: string;
+  format: 'tv_v' | 'post' | 'tv_h';
+}
+
 export default function PlantillasAdmin() {
   const [plantillas, setPlantillas] = useState<Plantilla[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [comercios, setComercios] = useState<Comercio[]>([]);
   const [customFonts, setCustomFonts] = useState<any[]>([]);
+  const [backgrounds, setBackgrounds] = useState<Background[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -81,6 +92,18 @@ export default function PlantillasAdmin() {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [builderFormat, setBuilderFormat] = useState<"story"|"post"|"tv_h">("story");
 
+  // Base Assets Editor
+  const [baseEditorOpen, setBaseEditorOpen] = useState(false);
+  const [baseEditorTemplate, setBaseEditorTemplate] = useState<Plantilla | null>(null);
+
+  // Duplicate / Clone Modal
+  const [duplicateModalTemplate, setDuplicateModalTemplate] = useState<Plantilla | null>(null);
+  const [duplicateMode, setDuplicateMode] = useState<'full' | 'content'>('full');
+  const [duplicateTargetCategories, setDuplicateTargetCategories] = useState<string[]>([]);
+  const [duplicateTargetName, setDuplicateTargetName] = useState("");
+  const [duplicateTargetTemplate, setDuplicateTargetTemplate] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
+
   // Data Formulario
   const [name, setName] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -90,12 +113,14 @@ export default function PlantillasAdmin() {
   const [fileVertical, setFileVertical] = useState<File | null>(null);
   const [filePost, setFilePost] = useState<File | null>(null);
   const [fileHorizontal, setFileHorizontal] = useState<File | null>(null);
+
+  // Background selection
+  const [bgIdVertical, setBgIdVertical] = useState<string>("");
+  const [bgIdPost, setBgIdPost] = useState<string>("");
+  const [bgIdHorizontal, setBgIdHorizontal] = useState<string>("");
   
-  // Array de 3 items forzosos
-  const [colors, setColors] = useState(["#ffffff", "#f97316", "#1e293b"]);
-  const [fonts, setFonts] = useState(["Inter", "Bebas Neue", "Montserrat"]);
-  const [isPremium, setIsPremium] = useState(false);
-  const [isFeaturedOnLanding, setIsFeaturedOnLanding] = useState(false);
+  // Visual Selection Tab
+  const [activeFmtTab, setActiveFmtTab] = useState<'tv_v' | 'post' | 'tv_h'>('tv_v');
 
   useEffect(() => {
     fetchInitialData();
@@ -103,8 +128,16 @@ export default function PlantillasAdmin() {
 
   const fetchInitialData = async () => {
     setLoading(true);
-    await Promise.all([fetchCategorias(), fetchPlantillas(), fetchCustomFonts(), fetchComercios()]);
+    await Promise.all([fetchCategorias(), fetchPlantillas(), fetchCustomFonts(), fetchComercios(), fetchBackgrounds()]);
     setLoading(false);
+  };
+
+  const fetchBackgrounds = async () => {
+    const q = query(collection(db, "backgrounds"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    const data: Background[] = [];
+    snap.forEach(d => data.push({ id: d.id, ...d.data() } as Background));
+    setBackgrounds(data);
   };
 
   const fetchComercios = async () => {
@@ -140,80 +173,67 @@ export default function PlantillasAdmin() {
     setPlantillas(data);
   };
 
-  const handleColorChange = (index: number, val: string) => {
-    const nw = [...colors];
-    nw[index] = val;
-    setColors(nw);
-  };
-
-  const handleFontChange = (index: number, val: string) => {
-    const nw = [...fonts];
-    nw[index] = val;
-    setFonts(nw);
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || selectedCategories.length === 0) {
-      alert("Por favor ingresa un nombre y selecciona al menos una categoría.");
+      useAlertStore.getState().openAlert("Por favor ingresa un nombre y selecciona al menos una categoría.", "warning");
       return;
     }
-    if (!editId && !fileVertical && !filePost && !fileHorizontal) { 
-       alert("Sube al menos 1 formato de imagen para la plantilla"); 
-       return; 
+    
+    // Validar que al menos un formato tenga fondo seleccionado
+    if (!bgIdVertical && !bgIdPost && !bgIdHorizontal && !editId) {
+      useAlertStore.getState().openAlert("Debes seleccionar al menos un fondo de la librería.", "warning");
+      return;
     }
 
     try {
       setSaving(true);
       
-      const updateData: any = { name, categories: selectedCategories, colors, fonts, comercioId: comercioId || "gastronomico", isPremium, isFeaturedOnLanding };
-
-      // Helper to upload a specific file
-      const uploadFile = async (f: File, type: string) => {
-        const storageRef = ref(storage, `templates/${type}_${Date.now()}_${f.name}`);
-        const uploadTask = await uploadBytesResumable(storageRef, f);
-        const url = await getDownloadURL(uploadTask.ref);
-        return { url, path: uploadTask.ref.fullPath };
+      const updateData: any = { 
+        name, 
+        categories: selectedCategories, 
+        comercioId: comercioId || "gastronomico"
       };
 
-      if (fileVertical) {
-        const res = await uploadFile(fileVertical, 'vertical');
-        updateData.imageUrlVertical = res.url;
-        updateData.storagePathVertical = res.path;
+      // Si hay fondo seleccionado, actualizar URLs
+      const bgV = backgrounds.find(b => b.id === bgIdVertical);
+      if (bgV) {
+        updateData.imageUrlVertical = bgV.url;
+        updateData.storagePathVertical = bgV.storagePath;
       }
-      if (filePost) {
-        const res = await uploadFile(filePost, 'post');
-        updateData.imageUrlPost = res.url;
-        updateData.storagePathPost = res.path;
+      
+      const bgP = backgrounds.find(b => b.id === bgIdPost);
+      if (bgP) {
+        updateData.imageUrlPost = bgP.url;
+        updateData.storagePathPost = bgP.storagePath;
       }
-      if (fileHorizontal) {
-        const res = await uploadFile(fileHorizontal, 'horizontal');
-        updateData.imageUrlHorizontal = res.url;
-        updateData.storagePathHorizontal = res.path;
+
+      const bgH = backgrounds.find(b => b.id === bgIdHorizontal);
+      if (bgH) {
+        updateData.imageUrlHorizontal = bgH.url;
+        updateData.storagePathHorizontal = bgH.storagePath;
       }
 
       if (editId) {
-        // UPDATE
         await updateDoc(doc(db, "templates", editId), updateData);
       } else {
-        // CREATE
         updateData.createdAt = serverTimestamp();
         await addDoc(collection(db, "templates"), updateData);
       }
 
-      // Reiniciar Formulario
       resetForm();
       await fetchPlantillas();
 
-    } catch (error) {
-      console.error("Error save plantilla:", error);
-      alert("Error al guardar la plantilla.");
+    } catch (e) {
+      console.error(e);
+      useAlertStore.getState().openAlert("Error al guardar la plantilla.", "error");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSaveLayouts = async (layers: TextLayer[], menuData: any) => {
+  const handleSaveLayouts = async (layers: any[], menuData: any) => {
     if (!previewImage) return;
     const docRef = doc(db, "templates", previewImage.template.id);
     const updateData: any = {};
@@ -244,57 +264,137 @@ export default function PlantillasAdmin() {
     setName(p.name);
     // Backward compatibility for old `category` string field
     setSelectedCategories(p.categories ? p.categories : (p as any).category ? [(p as any).category] : []);
-    setColors(p.colors || ["#ffffff", "#f97316", "#1e293b"]);
-    setFonts(p.fonts || ["Inter", "Bebas Neue", "Montserrat"]);
-    setIsPremium(p.isPremium || false);
-    setIsFeaturedOnLanding(p.isFeaturedOnLanding || false);
-    setFileVertical(null);
-    setFilePost(null);
-    setFileHorizontal(null);
+    setComercioId(p.comercioId || "gastronomico");
+    
+    // Buscar fondos que coincidan con las URLs actuales
+    const bgV = backgrounds.find(b => b.url === p.imageUrlVertical || b.url === p.imageUrl);
+    const bgP = backgrounds.find(b => b.url === p.imageUrlPost);
+    const bgH = backgrounds.find(b => b.url === p.imageUrlHorizontal);
+    
+    setBgIdVertical(bgV?.id || "");
+    setBgIdPost(bgP?.id || "");
+    setBgIdHorizontal(bgH?.id || "");
+    setActiveFmtTab('tv_v');
+
     setIsDrawerOpen(true);
   };
 
   const deleteItem = async (p: Plantilla) => {
-    if (!window.confirm("¿Estás seguro de eliminar esta plantilla visual?")) return;
-    
-    try {
-      await deleteDoc(doc(db, "templates", p.id));
-      
-      const deletePromises = [];
-      if (p.storagePath) deletePromises.push(deleteObject(ref(storage, p.storagePath)).catch(() => {}));
-      if (p.storagePathVertical) deletePromises.push(deleteObject(ref(storage, p.storagePathVertical)).catch(() => {}));
-      if (p.storagePathPost) deletePromises.push(deleteObject(ref(storage, p.storagePathPost)).catch(() => {}));
-      if (p.storagePathHorizontal) deletePromises.push(deleteObject(ref(storage, p.storagePathHorizontal)).catch(() => {}));
-      
-      await Promise.all(deletePromises);
-      
-      setPlantillas(plantillas.filter(item => item.id !== p.id));
-    } catch (error) {
-       console.error(error); alert("Hubo un error al eliminar.");
-    }
+    useAlertStore.getState().openConfirm({
+      message: "¿Estás seguro de eliminar esta plantilla visual?",
+      type: 'error',
+      confirmText: 'Sí, eliminar',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "templates", p.id));
+          
+          const deletePromises = [];
+          if (p.storagePath) deletePromises.push(deleteObject(ref(storage, p.storagePath)).catch(() => {}));
+          if (p.storagePathVertical) deletePromises.push(deleteObject(ref(storage, p.storagePathVertical)).catch(() => {}));
+          if (p.storagePathPost) deletePromises.push(deleteObject(ref(storage, p.storagePathPost)).catch(() => {}));
+          if (p.storagePathHorizontal) deletePromises.push(deleteObject(ref(storage, p.storagePathHorizontal)).catch(() => {}));
+          
+          await Promise.all(deletePromises);
+          
+          setPlantillas(plantillas.filter(item => item.id !== p.id));
+          useAlertStore.getState().openAlert("Plantilla eliminada exitosamente.", "success");
+        } catch (error) {
+          console.error(error);
+          useAlertStore.getState().openAlert("Hubo un error al eliminar.", "error");
+        }
+      }
+    });
   };
 
   const resetForm = () => {
      setName(""); setEditId(null);
-     setFileVertical(null); setFilePost(null); setFileHorizontal(null);
+     setBgIdVertical(""); setBgIdPost(""); setBgIdHorizontal("");
      if(categorias.length>0) setSelectedCategories([categorias[0].slug]);
-     setColors(["#ffffff", "#f97316", "#1e293b"]);
-     setFonts(["Inter", "Bebas Neue", "Montserrat"]);
      setComercioId("gastronomico");
-     setIsPremium(false);
-     setIsFeaturedOnLanding(false);
      setIsDrawerOpen(false);
-     
-     ['file-vertical', 'file-post', 'file-horizontal'].forEach(id => {
-       const el = document.getElementById(id) as HTMLInputElement;
-       if (el) el.value = '';
-     });
   }
+
+  const openDuplicateModal = (p: Plantilla) => {
+    setDuplicateModalTemplate(p);
+    setDuplicateMode('full');
+    setDuplicateTargetName(p.name + " (copia)");
+    setDuplicateTargetCategories(p.categories || []);
+    setDuplicateTargetTemplate(null);
+  };
+
+  const handleDuplicate = async () => {
+    if (!duplicateModalTemplate) return;
+    setDuplicating(true);
+    try {
+      const orig = duplicateModalTemplate;
+
+      if (duplicateMode === 'full') {
+        // Duplicate everything: create a new template doc
+        const newDoc: any = {
+          name: duplicateTargetName || orig.name + " (copia)",
+          categories: duplicateTargetCategories.length > 0 ? duplicateTargetCategories : (orig.categories || []),
+          comercioId: orig.comercioId || "gastronomico",
+          imageUrlVertical: orig.imageUrlVertical || null,
+          storagePathVertical: orig.storagePathVertical || null,
+          imageUrlPost: orig.imageUrlPost || null,
+          storagePathPost: orig.storagePathPost || null,
+          imageUrlHorizontal: orig.imageUrlHorizontal || null,
+          storagePathHorizontal: orig.storagePathHorizontal || null,
+          imageUrl: orig.imageUrl || null,
+          storagePath: orig.storagePath || null,
+          colors: orig.colors || [],
+          fonts: orig.fonts || [],
+          defaultLayersVertical: orig.defaultLayersVertical || [],
+          defaultMenuDataVertical: orig.defaultMenuDataVertical || null,
+          defaultLayersPost: orig.defaultLayersPost || [],
+          defaultMenuDataPost: orig.defaultMenuDataPost || null,
+          defaultLayersHorizontal: orig.defaultLayersHorizontal || [],
+          defaultMenuDataHorizontal: orig.defaultMenuDataHorizontal || null,
+          layouts: orig.layouts || {},
+          isPremium: orig.isPremium || false,
+          isFeaturedOnLanding: false,
+          createdAt: serverTimestamp(),
+        };
+        await addDoc(collection(db, "templates"), newDoc);
+      } else {
+        // Clone content only: copy layers/menu/colors/fonts to existing target template
+        if (!duplicateTargetTemplate) {
+          useAlertStore.getState().openAlert("Selecciona una plantilla destino.", "warning");
+          setDuplicating(false);
+          return;
+        }
+        const targetRef = doc(db, "templates", duplicateTargetTemplate);
+        const updateData: any = {
+          defaultLayersVertical: orig.defaultLayersVertical || [],
+          defaultMenuDataVertical: orig.defaultMenuDataVertical || null,
+          defaultLayersPost: orig.defaultLayersPost || [],
+          defaultMenuDataPost: orig.defaultMenuDataPost || null,
+          defaultLayersHorizontal: orig.defaultLayersHorizontal || [],
+          defaultMenuDataHorizontal: orig.defaultMenuDataHorizontal || null,
+          layouts: orig.layouts || {},
+          colors: orig.colors || [],
+          fonts: orig.fonts || [],
+        };
+        await updateDoc(targetRef, updateData);
+      }
+
+      await fetchPlantillas();
+      setDuplicateModalTemplate(null);
+      useAlertStore.getState().openAlert(duplicateMode === 'full'
+        ? "¡Plantilla duplicada exitosamente!"
+        : "¡Contenido clonado a la plantilla destino!", "success");
+    } catch (err) {
+      console.error(err);
+      useAlertStore.getState().openAlert("Error al duplicar/clonar la plantilla.", "error");
+    } finally {
+      setDuplicating(false);
+    }
+  };
 
   const InputLabel = ({t}: {t:string}) => <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t}</label>;
   const inputClass = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-sm font-medium transition-all";
 
-  const allFonts = [...FONTS, ...customFonts.map(f => f.name)];
+  const allFonts = Array.from(new Set([...FONTS, ...customFonts.map(f => f.name)]));
 
   const filteredPlantillas = plantillas.flatMap(p => {
     // Comercio Filter
@@ -455,124 +555,133 @@ export default function PlantillasAdmin() {
                   </div>
                 </details>
 
-                {/* 2. ARCHIVOS DE IMAGEN */}
-                <details className="group border border-slate-200 rounded-xl bg-white overflow-hidden">
-                  <summary className="flex items-center justify-between p-4 cursor-pointer bg-slate-50/50 hover:bg-slate-50 font-bold text-sm text-slate-800 select-none">
-                    <span>2. Archivos (Vertical, Cuadrado, Horiz)</span>
-                    <span className="transition group-open:rotate-180">▼</span>
-                  </summary>
-                  <div className="p-4 pt-2 space-y-4 border-t border-slate-100 bg-white">
-                     <p className="text-[11px] text-slate-500 mb-2">Sube los fondos limpios para cada formato. Puedes crear la plantilla solo con uno.</p>
-                     <div>
-                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex justify-between">
-                          <span>📱 Vertical (1080x1920)</span>
-                          {editId && <span className="text-slate-400 font-normal">Opcional rev</span>}
-                       </label>
-                       <input id="file-vertical" type="file" accept="image/*" onChange={e => { if(e.target.files) setFileVertical(e.target.files[0])}}
-                         className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                     </div>
-                     <div className="pt-2 border-t border-slate-100">
-                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex justify-between">
-                          <span>⏹️ Cuadrado (1080x1080)</span>
-                          {editId && <span className="text-slate-400 font-normal">Opcional rev</span>}
-                       </label>
-                       <input id="file-post" type="file" accept="image/*" onChange={e => { if(e.target.files) setFilePost(e.target.files[0])}}
-                         className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                     </div>
-                     <div className="pt-2 border-t border-slate-100">
-                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex justify-between">
-                          <span>📺 Horizontal (1920x1080)</span>
-                          {editId && <span className="text-slate-400 font-normal">Opcional rev</span>}
-                       </label>
-                       <input id="file-horizontal" type="file" accept="image/*" onChange={e => { if(e.target.files) setFileHorizontal(e.target.files[0])}}
-                         className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                     </div>
+                              {/* 2. GALEÍA VISUAL DE FONDOS */}
+                <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
+                  <div className="bg-slate-50/50 px-4 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                    <span className="font-black text-sm text-slate-800">2. Fondos de Librería</span>
+                    <div className="flex gap-1 items-center">
+                      {bgIdVertical && <span className="w-2 h-2 rounded-full bg-emerald-400" title="Story asignado" />}
+                      {bgIdPost && <span className="w-2 h-2 rounded-full bg-blue-400" title="Post asignado" />}
+                      {bgIdHorizontal && <span className="w-2 h-2 rounded-full bg-violet-400" title="TV asignado" />}
+                    </div>
                   </div>
-                </details>
 
-                {/* 3. IDENTIDAD VISUAL */}
-                <details className="group border border-slate-200 rounded-xl bg-white overflow-hidden">
-                  <summary className="flex items-center justify-between p-4 cursor-pointer bg-slate-50/50 hover:bg-slate-50 font-bold text-sm text-slate-800 select-none">
-                    <span>3. Identidad Visual Sugerida</span>
-                    <span className="transition group-open:rotate-180">▼</span>
-                  </summary>
-                  <div className="p-4 pt-2 space-y-4 border-t border-slate-100 bg-white">
-                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">3 Colores Sugeridos</label>
-                        <div className="space-y-2">
-                          {[0, 1, 2].map((idx) => (
-                            <div key={`color-${idx}`} className="flex items-center gap-2">
-
-                             <span className="text-slate-400 font-bold text-xs">{idx + 1}.</span>
-                             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-1.5 flex-1 shadow-sm">
-                               <input type="color" className="w-8 h-8 rounded shrink-0 cursor-pointer border-none bg-transparent" 
-                                 title="Color" value={colors[idx]} onChange={e => handleColorChange(idx, e.target.value)} />
-                               <span className="text-xs font-mono text-slate-500 uppercase flex-1">{colors[idx]}</span>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
+                  <div className="p-4 space-y-4">
+                    {/* Tabs de Formato */}
+                    <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
+                      {[
+                        { id: 'tv_v', label: '📱 Story', count: bgIdVertical ? 1 : 0 },
+                        { id: 'post', label: '⏹️ Post', count: bgIdPost ? 1 : 0 },
+                        { id: 'tv_h', label: '📺 TV', count: bgIdHorizontal ? 1 : 0 },
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setActiveFmtTab(tab.id as any)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[11px] font-black transition-all ${
+                            activeFmtTab === tab.id
+                              ? 'bg-white text-slate-900 shadow-sm'
+                              : 'text-slate-400 hover:text-slate-600'
+                          }`}
+                        >
+                          {tab.label}
+                          {tab.count > 0 && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          )}
+                        </button>
+                      ))}
                     </div>
 
-                    {/* FUENTES */}
-                    <div>
-                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">3 Fuentes Sugeridas</label>
-                       <div className="space-y-2">
-                         {[0, 1, 2].map((idx) => (
-                           <div key={`font-${idx}`} className="flex items-center gap-2">
-                             <span className="text-slate-400 font-bold text-xs">{idx + 1}.</span>
-                             <select className="flex-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 outline-none p-2.5 shadow-sm cursor-pointer"
-                               value={fonts[idx]} onChange={e => handleFontChange(idx, e.target.value)}>
-                               {allFonts.map(f => <option key={f} value={f} style={{fontFamily: f}}>{f}</option>)}
-                             </select>
-                           </div>
-                         ))}
-                       </div>
+                    {/* Grid de Miniaturas */}
+                    {(() => {
+                      const fmtBgs = backgrounds.filter(b => b.format === activeFmtTab);
+                      const currentId = activeFmtTab === 'tv_v' ? bgIdVertical : activeFmtTab === 'post' ? bgIdPost : bgIdHorizontal;
+                      const setCurrentId = activeFmtTab === 'tv_v' ? setBgIdVertical : activeFmtTab === 'post' ? setBgIdPost : setBgIdHorizontal;
+
+                      if (fmtBgs.length === 0) return (
+                        <div className="py-10 text-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                          <p className="text-2xl mb-2">🖼️</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sin fondos en este formato</p>
+                          <p className="text-[9px] text-slate-300 mt-1">Súbelos desde el panel "Fondos"</p>
+                        </div>
+                      );
+
+                      return (
+                        <div className={`grid gap-2 max-h-[340px] overflow-y-auto pr-1 ${
+                          activeFmtTab === 'tv_v' ? 'grid-cols-3' : 
+                          activeFmtTab === 'post' ? 'grid-cols-3' : 'grid-cols-2'
+                        }`}>
+                          {fmtBgs.map(bg => {
+                            const isSelected = currentId === bg.id;
+                            return (
+                              <button
+                                key={bg.id}
+                                type="button"
+                                onClick={() => setCurrentId(isSelected ? '' : bg.id)}
+                                className={`relative rounded-xl overflow-hidden group transition-all duration-200 ${
+                                  isSelected
+                                    ? 'ring-[3px] ring-offset-2 ring-rose-500 shadow-lg shadow-rose-200'
+                                    : 'hover:ring-2 hover:ring-slate-300 hover:ring-offset-1'
+                                }`}
+                              >
+                                <div className={`w-full ${
+                                  activeFmtTab === 'tv_v' ? 'aspect-[9/16]' :
+                                  activeFmtTab === 'post' ? 'aspect-square' : 'aspect-[16/9]'
+                                }`}>
+                                  <img src={bg.url} alt={bg.name} className="w-full h-full object-cover" />
+                                </div>
+                                <div className={`absolute inset-0 transition-opacity ${
+                                  isSelected ? 'bg-rose-500/20' : 'bg-transparent'
+                                }`} />
+                                {isSelected && (
+                                  <div className="absolute top-1.5 right-1.5 bg-rose-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shadow-md">
+                                    ✓
+                                  </div>
+                                )}
+                                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <p className="text-[8px] font-black text-white uppercase truncate">{bg.name}</p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Resumen de selección */}
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100">
+                      {[
+                        { id: 'tv_v', label: 'Story', bgId: bgIdVertical },
+                        { id: 'post', label: 'Post', bgId: bgIdPost },
+                        { id: 'tv_h', label: 'TV', bgId: bgIdHorizontal },
+                      ].map(fmt => {
+                        const bg = backgrounds.find(b => b.id === fmt.bgId);
+                        return (
+                          <div key={fmt.id} onClick={() => setActiveFmtTab(fmt.id as any)} className="cursor-pointer group">
+                            <div className={`rounded-lg overflow-hidden border-2 transition-all ${
+                              bg ? 'border-emerald-300' : 'border-dashed border-slate-200'
+                            } ${activeFmtTab === fmt.id ? 'ring-2 ring-rose-300' : ''}`}>
+                              {bg ? (
+                                <div className={`w-full ${
+                                  fmt.id === 'tv_v' ? 'aspect-[9/16]' : fmt.id === 'post' ? 'aspect-square' : 'aspect-[16/9]'
+                                }`}>
+                                  <img src={bg.url} alt={bg.name} className="w-full h-full object-cover" />
+                                </div>
+                              ) : (
+                                <div className={`w-full flex items-center justify-center text-slate-300 ${
+                                  fmt.id === 'tv_v' ? 'aspect-[9/16]' : fmt.id === 'post' ? 'aspect-square' : 'aspect-[16/9]'
+                                }`}>
+                                  <span className="text-lg">+</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase text-center mt-1">{fmt.label}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                 </div>
-                </details>
-
-                {/* 4. MONETIZACIÓN */}
-                <details className="group border border-slate-200 rounded-xl bg-white overflow-hidden">
-                  <summary className="flex items-center justify-between p-4 cursor-pointer bg-slate-50/50 hover:bg-slate-50 font-bold text-sm text-slate-800 select-none">
-                    <span>4. Exclusividad (Monetización)</span>
-                    <span className="transition group-open:rotate-180">▼</span>
-                  </summary>
-                  <div className="p-4 pt-2 border-t border-slate-100 bg-white">
-                     <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-amber-100 bg-amber-50/50 hover:bg-amber-50">
-                        <div className="relative">
-                          <input type="checkbox" className="sr-only" checked={isPremium} onChange={e => setIsPremium(e.target.checked)} />
-                          <div className={`block w-10 h-6 pl-1 rounded-full border-2 transition-colors ${isPremium ? 'bg-amber-500 border-amber-500' : 'bg-slate-200 border-slate-200'}`}></div>
-                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isPremium ? 'transform translate-x-4' : ''}`}></div>
-                        </div>
-                        <div className="flex flex-col">
-                           <span className="text-sm font-bold text-amber-600 flex items-center gap-1">⭐ Plantilla Premium</span>
-                           <span className="text-[10px] text-slate-500">Ocultar de planes gratis / Plan One</span>
-                        </div>
-                     </label>
                   </div>
-                </details>
-
-                {/* 5. VISIBILIDAD */}
-                <details className="group border border-slate-200 rounded-xl bg-white overflow-hidden">
-                  <summary className="flex items-center justify-between p-4 cursor-pointer bg-slate-50/50 hover:bg-slate-50 font-bold text-sm text-slate-800 select-none">
-                    <span>5. Visibilidad (Landing Page)</span>
-                    <span className="transition group-open:rotate-180">▼</span>
-                  </summary>
-                  <div className="p-4 pt-2 border-t border-slate-100 bg-white">
-                     <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border border-indigo-50 bg-indigo-50/50 hover:bg-indigo-100/50">
-                        <div className="relative">
-                          <input type="checkbox" className="sr-only" checked={isFeaturedOnLanding} onChange={e => setIsFeaturedOnLanding(e.target.checked)} />
-                          <div className={`block w-10 h-6 pl-1 rounded-full border-2 transition-colors ${isFeaturedOnLanding ? 'bg-indigo-500 border-indigo-500' : 'bg-slate-200 border-slate-200'}`}></div>
-                          <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isFeaturedOnLanding ? 'transform translate-x-4' : ''}`}></div>
-                        </div>
-                        <div className="flex flex-col">
-                           <span className="text-sm font-bold text-indigo-700 flex items-center gap-1">🌟 Destacar en Landing Page</span>
-                           <span className="text-[10px] text-slate-500">Aparecerá en la galería animada de inicio (como Demo).</span>
-                        </div>
-                     </label>
-                  </div>
-                </details>
+                </div>
               </form>
             </div>
             
@@ -626,6 +735,12 @@ export default function PlantillasAdmin() {
                            <div key={`${p.id}-${p.displayFormat}`} className="bg-white group rounded-[20px] border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col items-center relative">
                              
                              <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <button onClick={(e)=>{ e.stopPropagation(); openDuplicateModal(p); }} className="bg-white/90 backdrop-blur-sm text-amber-600 p-2.5 rounded-xl shadow-sm hover:bg-amber-50" title="Duplicar / Clonar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                 </button>
+                                <button onClick={()=>{ setBaseEditorTemplate(p); setBaseEditorOpen(true); }} className="bg-white/90 backdrop-blur-sm text-emerald-600 p-2.5 rounded-xl shadow-sm hover:bg-emerald-50" title="Configurar Base (Fuentes/Colores/Productos)">
+                                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.23 3.003a7.3 7.3 0 0 1 7.007 10.012 7.5 7.5 0 0 1-10.012 7.007 7.5 7.5 0 0 1-7.007-10.012 7.5 7.5 0 0 1 10.012-7.007Z"/><path d="m16 9-4 4-2-2"/><path d="M12 3v3"/><path d="M18.5 4.5 16 7"/><path d="M21 9h-3"/><path d="M18.5 13.5 16 11"/><path d="M12 15v-3"/></svg>
+                                </button>
                                 <button onClick={()=>editItem(p)} className="bg-white/90 backdrop-blur-sm text-indigo-600 p-2.5 rounded-xl shadow-sm hover:bg-indigo-50" title="Editar config"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
                                 <button onClick={()=>deleteItem(p)} className="bg-white/90 backdrop-blur-sm text-rose-500 p-2.5 rounded-xl shadow-sm hover:bg-rose-50" title="Borrar"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
                              </div>
@@ -649,12 +764,30 @@ export default function PlantillasAdmin() {
                                          const leftPct = l.posX !== undefined ? l.posX : (l.x / baseWidth) * 100;
                                          const topPct = l.posY !== undefined ? l.posY : (l.y / baseHeight) * 100;
                                          
-                                         // Width scaling guard (auto-heals legacy arbitrary pixel widths)
-                                         const wVal = l.width;
+                                         // Width and Height scaling guard auto-healer
                                          let widthPct = "100%";
-                                         if (wVal) {
-                                            if (typeof wVal === 'number' && wVal <= 100) widthPct = `${wVal}%`;
-                                            else widthPct = `${(wVal / (p.displayFormat === 'post' ? 400 : p.displayFormat === 'tv_h' ? 700 : 250)) * 100}%`;
+                                         if (l.width !== undefined && l.width !== null && l.width !== "") {
+                                            if (typeof l.width === 'string' && l.width.endsWith('%')) {
+                                               widthPct = l.width;
+                                            } else {
+                                               const wNum = parseFloat(String(l.width));
+                                               if (!isNaN(wNum)) {
+                                                  if (wNum <= 100) widthPct = `${wNum}%`;
+                                                  else widthPct = `${(wNum / (p.displayFormat === 'post' ? 400 : p.displayFormat === 'tv_h' ? 700 : 250)) * 100}%`;
+                                               }
+                                            }
+                                         }
+                                         
+                                         let heightPct = "auto";
+                                         if (l.height !== undefined && l.height !== null && l.height !== "") {
+                                            if (typeof l.height === 'string' && l.height.endsWith('%')) {
+                                               heightPct = l.height;
+                                            } else {
+                                               const hNum = parseFloat(String(l.height));
+                                               if (!isNaN(hNum)) {
+                                                  if (hNum <= 100) heightPct = `${hNum}%`;
+                                               }
+                                            }
                                          }
                                          
                                          const transformStr = 'translate(-50%, -50%)';
@@ -665,6 +798,7 @@ export default function PlantillasAdmin() {
                                                left: `${leftPct}%`,
                                                top: `${topPct}%`,
                                                width: widthPct,
+                                               height: heightPct,
                                                transform: transformStr,
                                                display: 'flex',
                                                alignItems: 'center',
@@ -783,9 +917,164 @@ export default function PlantillasAdmin() {
                    setBuilderOpen(false);
                    fetchPlantillas();
                 }}
-         customFonts={customFonts.map(f => f.name)}
+         customFonts={customFonts}
          initialCategory={filterCat === "todas" ? ((plantillas.find(p => p.id === editId)?.categories?.[0]) || 'general') : filterCat}
       />
+
+      {baseEditorOpen && baseEditorTemplate && (
+         <TemplateBaseEditorModal 
+           isOpen={baseEditorOpen}
+           template={baseEditorTemplate}
+           categorySlug={filterCat === "todas" ? (baseEditorTemplate.categories?.[0] || 'general') : filterCat}
+           onClose={() => setBaseEditorOpen(false)}
+           allSystemFonts={FONTS}
+           customFonts={customFonts}
+           onSave={async (data) => {
+             try {
+               setSaving(true);
+               const docRef = doc(db, "templates", baseEditorTemplate.id);
+               
+               // We need the full fresh layouts object
+               const freshSnap = await getDocs(query(collection(db, "templates")));
+               const currentFull = freshSnap.docs.find(d => d.id === baseEditorTemplate.id)?.data() as Plantilla;
+               const existingLayouts = currentFull?.layouts || {};
+               
+               const catKey = filterCat === "todas" ? (baseEditorTemplate.categories?.[0] || 'general') : filterCat;
+               
+               // Ensure the category object exists
+               if (!existingLayouts[catKey]) {
+                 existingLayouts[catKey] = {};
+               }
+
+               // Update specifically the base assets
+               existingLayouts[catKey] = {
+                 ...(existingLayouts[catKey] as any),
+                 baseFonts: data.baseFonts,
+                 baseColors: data.baseColors,
+                 baseProducts: data.baseProducts
+               };
+
+               await updateDoc(docRef, { layouts: existingLayouts });
+                
+                setBaseEditorOpen(false);
+                fetchPlantillas();
+                useAlertStore.getState().openAlert("Base guardada correctamente", "success");
+             } catch (e) {
+               console.error(e);
+               useAlertStore.getState().openAlert("Error al guardar la base", "error");
+             } finally {
+               setSaving(false);
+             }
+           }}
+         />
+       )}
+       {/* MODAL DUPLICAR / CLONAR PLANTILLA */}
+       {duplicateModalTemplate && (
+         <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDuplicateModalTemplate(null)}>
+           <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 shrink-0">
+               <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-xl">📋</div>
+                 <div>
+                   <h3 className="text-lg font-black text-slate-800">Duplicar / Clonar Plantilla</h3>
+                   <p className="text-[11px] text-slate-500 font-medium">{duplicateModalTemplate.name}</p>
+                 </div>
+               </div>
+               <button onClick={() => setDuplicateModalTemplate(null)} className="text-slate-400 hover:text-slate-600 bg-white shadow-sm border border-slate-100 hover:bg-slate-100 w-8 h-8 flex items-center justify-center rounded-xl transition-all">✕</button>
+             </div>
+
+             <div className="p-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
+               <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+                 <button type="button" onClick={() => { setDuplicateMode('full'); setDuplicateTargetTemplate(null); }}
+                   className={`flex-1 py-3 rounded-xl text-[13px] font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${duplicateMode === 'full' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                   <span className="text-lg">📑</span> Duplicar Completo
+                 </button>
+                 <button type="button" onClick={() => setDuplicateMode('content')}
+                   className={`flex-1 py-3 rounded-xl text-[13px] font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${duplicateMode === 'content' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                   <span className="text-lg">🔄</span> Clonar a Otra
+                 </button>
+               </div>
+             </div>
+
+             <div className="p-6 flex flex-col gap-5 overflow-y-auto flex-1">
+               <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                 <div className={`w-14 rounded-xl bg-slate-200 overflow-hidden shrink-0 border border-slate-200 ${(duplicateModalTemplate as any).displayFormat === 'tv_v' ? 'aspect-[9/16]' : (duplicateModalTemplate as any).displayFormat === 'post' ? 'aspect-square' : 'aspect-[16/9]'}`}>
+                    {(duplicateModalTemplate.imageUrlVertical || (duplicateModalTemplate as any).displayUrl || duplicateModalTemplate.imageUrl) && (
+                      <img src={(duplicateModalTemplate as any).displayUrl || duplicateModalTemplate.imageUrlVertical || duplicateModalTemplate.imageUrl || ''} alt="Origen" className="w-full h-full object-cover" />
+                    )}
+                 </div>
+                 <div className="flex flex-col flex-1 min-w-0">
+                   <span className="text-[10px] font-black uppercase text-amber-500 tracking-widest leading-none mb-1">Plantilla Origen</span>
+                   <span className="text-sm font-bold text-slate-700 truncate">{duplicateModalTemplate.name}</span>
+                 </div>
+               </div>
+
+               {duplicateMode === 'full' ? (
+                 <div className="flex flex-col gap-4">
+                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-[12px] text-amber-800 font-medium">
+                     <strong>📑 Duplicar Completo:</strong> Crea una nueva plantilla idéntica con todos los fondos, capas y configuración.
+                   </div>
+                   <div>
+                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nombre de copia</label>
+                     <input type="text" value={duplicateTargetName} onChange={e => setDuplicateTargetName(e.target.value)}
+                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all" />
+                   </div>
+                 </div>
+               ) : (
+                 <div className="flex flex-col gap-4">
+                   <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-[12px] text-indigo-800 font-medium">
+                     <strong>🔄 Clonar Contenido:</strong> Copia capas y configuraciones a una plantilla destino, manteniendo sus propios fondos.
+                   </div>
+                   <div>
+                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Destino</label>
+                     <div className="grid grid-cols-3 gap-3 max-h-[200px] overflow-y-auto pr-1">
+                       {plantillas.filter(p => {
+                         if (p.id === duplicateModalTemplate.id) return false;
+                         const fmt = (duplicateModalTemplate as any).displayFormat;
+                         if (fmt === 'tv_v') return !!p.imageUrlVertical || !!p.imageUrl;
+                         if (fmt === 'post') return !!p.imageUrlPost;
+                         if (fmt === 'tv_h') return !!p.imageUrlHorizontal;
+                         return true;
+                       }).map(p => {
+                         const isSelected = duplicateTargetTemplate === p.id;
+                         const fmt = (duplicateModalTemplate as any).displayFormat;
+                         let thumbUrl = '';
+                         if (fmt === 'tv_v') thumbUrl = p.imageUrlVertical || p.imageUrl || '';
+                         else if (fmt === 'post') thumbUrl = p.imageUrlPost || '';
+                         else if (fmt === 'tv_h') thumbUrl = p.imageUrlHorizontal || '';
+                         else thumbUrl = p.imageUrlVertical || p.imageUrl || p.imageUrlPost || p.imageUrlHorizontal || '';
+                         
+                         return (
+                           <button type="button" key={p.id} onClick={() => setDuplicateTargetTemplate(isSelected ? null : p.id)}
+                             className={`relative rounded-xl overflow-hidden transition-all duration-200 border-[3px] flex flex-col ${isSelected ? 'border-indigo-500 ring-4 ring-indigo-500/20' : 'border-transparent hover:border-slate-300'} ${fmt === 'tv_v' ? 'aspect-[9/16]' : fmt === 'post' ? 'aspect-square' : 'aspect-[16/9]'}`}>
+                             <div className="flex-1 bg-slate-100 relative">
+                               {thumbUrl ? <img src={thumbUrl} alt={p.name} className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 bg-slate-200 flex items-center justify-center text-[10px] text-slate-400">Sin Base</div>}
+                               {isSelected && <div className="absolute top-1 right-1 w-5 h-5 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs font-black">✓</div>}
+                             </div>
+                             <div className="p-1 bg-white text-center">
+                               <p className="text-[9px] font-black text-slate-700 truncate">{p.name}</p>
+                             </div>
+                           </button>
+                         );
+                       })}
+                     </div>
+                   </div>
+                 </div>
+               )}
+             </div>
+
+             <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
+               <button onClick={() => setDuplicateModalTemplate(null)} className="px-5 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 transition-colors text-[13px]">Cancelar</button>
+               <button
+                 onClick={handleDuplicate}
+                 disabled={duplicating || (duplicateMode === 'full' && !duplicateTargetName.trim()) || (duplicateMode === 'content' && !duplicateTargetTemplate)}
+                 className={`px-6 py-2.5 rounded-xl font-black disabled:opacity-40 text-white shadow-lg transition-all text-[13px] flex items-center gap-2 ${duplicateMode === 'full' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30'}`}>
+                 {duplicating ? 'Procesando...' : (duplicateMode === 'full' ? 'Duplicar' : 'Clonar')}
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
   );
 }

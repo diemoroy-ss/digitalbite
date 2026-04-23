@@ -29,16 +29,19 @@ export default function TemplateBuilderModal({ isOpen, plantilla, formato, initi
   const [loadingGallery, setLoadingGallery] = useState(false);
 
   useEffect(() => {
+    if (isOpen && initialCategory) {
+      setActiveCategory(initialCategory);
+    }
+  }, [isOpen, initialCategory]);
+
+  useEffect(() => {
     if (isOpen && plantilla) {
-      if (!activeCategory) {
-         const fallbackCat = (plantilla.categories && plantilla.categories.length > 0) ? plantilla.categories[0] : 'general';
-         setActiveCategory(fallbackCat);
-         return; // reloca on next render
-      }
+      if (!activeCategory) return;
       
-      if (plantilla.layouts && plantilla.layouts[activeCategory] && plantilla.layouts[activeCategory][formato]) {
-         setLayers(plantilla.layouts[activeCategory][formato].layers || []);
-         setMenuData(plantilla.layouts[activeCategory][formato].menuData || { isMenuMode: false, menuItems: [{name: '', price: ''}] });
+      const layoutData = plantilla.layouts?.[activeCategory]?.[formato];
+      if (layoutData) {
+         setLayers(layoutData.layers || []);
+         setMenuData(layoutData.menuData || { isMenuMode: false, menuItems: [{name: '', price: ''}] });
       } else {
          if (formato === "story") {
            setLayers(plantilla.defaultLayersVertical || []);
@@ -74,11 +77,32 @@ export default function TemplateBuilderModal({ isOpen, plantilla, formato, initi
     try {
       const snap = await getDocs(collection(db, "products"));
       let items: any[] = [];
-      snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+      snap.forEach(d => {
+        const data = d.data();
+        if (data.images && data.images.length > 0) {
+          data.images.forEach((img: any) => items.push({ id: d.id + img.url, ...data, imageUrl: img.url }));
+        } else {
+          items.push({ id: d.id, ...data });
+        }
+      });
       
-      if (type === 'precio') items = items.filter(i => i.category === 'precio');
-      else if (type === 'linea') items = items.filter(i => i.category === 'linea');
-      else items = items.filter(i => i.category !== 'precio' && i.category !== 'linea');
+      if (type === 'precio') {
+        items = items.filter(i => i.category === 'precio');
+      } else if (type === 'linea') {
+        items = items.filter(i => i.category === 'linea');
+      } else {
+        // Para productos generales, si existe configuración base en esta categoría, RESTRINGIR
+        const baseProds = plantilla.layouts?.[activeCategory]?.baseProducts;
+        if (baseProds && baseProds.length > 0) {
+          // Normalizamos las URLs para la comparación por si acaso hay espacios o diferencias menores
+          items = items.filter(i => {
+             if (!i.imageUrl) return false;
+             return baseProds.some((bp: string) => bp.trim() === i.imageUrl.trim());
+          });
+        } else {
+          items = items.filter(i => i.category !== 'precio' && i.category !== 'linea');
+        }
+      }
       
       setDbProducts(items);
     } catch(e) {
@@ -220,19 +244,24 @@ export default function TemplateBuilderModal({ isOpen, plantilla, formato, initi
               </p>
            </div>
            
-           {activeLayerId && (
-              <div className="mt-8 pt-6 border-t border-slate-200">
-                <ActiveLayerPropertiesPanel 
-                   layers={layers}
-                   onLayersChange={setLayers}
-                   activeLayerId={activeLayerId}
-                   onSetActiveLayer={setActiveLayerId}
-                   templateFonts={plantilla.fonts || []}
-                   templateColors={plantilla.colors || []}
-                   customFonts={customFonts ? customFonts.map(f => ({ name: f, url: "" })) : []}
-                />
-              </div>
-           )}
+           {(() => {
+              const baseC = plantilla.layouts?.[activeCategory]?.baseColors;
+              const baseF = plantilla.layouts?.[activeCategory]?.baseFonts;
+
+              return activeLayerId && (
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <ActiveLayerPropertiesPanel 
+                    layers={layers}
+                    onLayersChange={setLayers}
+                    activeLayerId={activeLayerId}
+                    onSetActiveLayer={setActiveLayerId}
+                    templateFonts={baseF && baseF.length > 0 ? baseF : (plantilla.fonts || [])}
+                    templateColors={baseC && baseC.length > 0 ? baseC : (plantilla.colors || [])}
+                    customFonts={customFonts ? customFonts.map(f => ({ name: f, url: "" })) : []}
+                  />
+                </div>
+              );
+           })()}
         </div>
 
         <div className="p-6 border-t border-slate-200 bg-slate-50 sticky bottom-0">
@@ -256,8 +285,14 @@ export default function TemplateBuilderModal({ isOpen, plantilla, formato, initi
                formato={formato}
                menuData={menuData}
                onMenuChange={setMenuData}
-               templateFonts={plantilla.fonts || []}
-               templateColors={plantilla.colors || []}
+               templateFonts={(() => {
+                 const base = plantilla.layouts?.[activeCategory]?.baseFonts;
+                 return base && base.length > 0 ? base : (plantilla.fonts || []);
+               })()}
+               templateColors={(() => {
+                 const base = plantilla.layouts?.[activeCategory]?.baseColors;
+                 return base && base.length > 0 ? base : (plantilla.colors || []);
+               })()}
                isAdminMode={true}
             />
          </div>

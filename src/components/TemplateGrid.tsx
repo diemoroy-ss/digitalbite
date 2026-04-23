@@ -54,12 +54,30 @@ export default function TemplateGrid({ layouts, selectedLayout, onSelectLayout, 
                          const leftPct = l.posX !== undefined ? l.posX : (l.x / baseWidth) * 100;
                          const topPct = l.posY !== undefined ? l.posY : (l.y / baseHeight) * 100;
                          
-                         const wVal = l.width;
+                         // Width and Height scaling guard auto-healer
                          let widthPct = "100%";
-                         if (wVal) {
-                            if (typeof wVal === 'string' && wVal.endsWith('%')) widthPct = wVal;
-                            else if (typeof wVal === 'number' && wVal <= 100) widthPct = `${wVal}%`;
-                            else widthPct = `${(wVal / (formato === 'post' ? 400 : formato === 'tv_h' ? 700 : 250)) * 100}%`;
+                         if (l.width !== undefined && l.width !== null && l.width !== "") {
+                            if (typeof l.width === 'string' && l.width.endsWith('%')) {
+                               widthPct = l.width;
+                            } else {
+                               const wNum = parseFloat(String(l.width));
+                               if (!isNaN(wNum)) {
+                                  if (wNum <= 100) widthPct = `${wNum}%`;
+                                  else widthPct = `${(wNum / (formato === 'post' ? 400 : formato === 'tv_h' ? 700 : 250)) * 100}%`;
+                               }
+                            }
+                         }
+                         
+                         let heightPct = "auto";
+                         if (l.height !== undefined && l.height !== null && l.height !== "") {
+                            if (typeof l.height === 'string' && l.height.endsWith('%')) {
+                               heightPct = l.height;
+                            } else {
+                               const hNum = parseFloat(String(l.height));
+                               if (!isNaN(hNum)) {
+                                  if (hNum <= 100) heightPct = `${hNum}%`;
+                               }
+                            }
                          }
                          
                          const transformStr = 'translate(-50%, -50%)';
@@ -70,6 +88,7 @@ export default function TemplateGrid({ layouts, selectedLayout, onSelectLayout, 
                                left: `${leftPct}%`,
                                top: `${topPct}%`,
                                width: widthPct,
+                               height: heightPct,
                                transform: transformStr,
                                display: 'flex',
                                alignItems: 'center',

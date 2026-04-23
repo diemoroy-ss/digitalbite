@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProfileMenu from "../../components/ProfileMenu";
 import { useAlertStore } from "../../store/useAlertStore";
+import RemotionModal from "../../components/RemotionModal";
 
 // Generator Components
 import CategorySelector from "../../components/CategorySelector";
@@ -28,6 +29,8 @@ export default function DashboardPage() {
 
   // ----- NAVIGATION & VIEW MODE -----
   const [activeTab, setActiveTab] = useState<"list" | "rrss" | "tv" | "ia" | "proximamente" | "cuota">("list");
+  const [isRemotionModalOpen, setIsRemotionModalOpen] = useState(false);
+  const [remotionData, setRemotionData] = useState<any>(null);
   const [isLienzosMenuOpen, setIsLienzosMenuOpen] = useState(true);
 
   // ----- DB DATA (Templates & Categories) -----
@@ -42,6 +45,7 @@ export default function DashboardPage() {
   const [pendingProductToAdd, setPendingProductToAdd] = useState<string | null>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   // ----- VIDEO & WEBOOK STATE -----
   const [loadingVideoId, setLoadingVideoId] = useState<string | null>(null);
@@ -116,10 +120,10 @@ export default function DashboardPage() {
        const res = await fetch("/api/gemini", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
        const data = await res.json();
        if (res.ok) setSendMessage(data.text);
-       else alert("Error: " + data.error);
+       else useAlertStore.getState().openAlert("Error: " + data.error, "error");
      } catch (err) {
        console.error(err);
-       alert("Error conectando con la IA");
+       useAlertStore.getState().openAlert("Error conectando con la IA", "error");
      } finally {
        setGeneratingCopy(false);
      }
@@ -344,53 +348,8 @@ export default function DashboardPage() {
 
   const handleVideoGenerate = async (renderObj: any) => {
     if (!renderObj) return;
-    setLoadingVideoId(renderObj.id);
-
-    try {
-      // 1. Marcar en Firestore que el video se está procesando
-      const renderRef = doc(db, "renders_temporales", renderObj.id);
-      await updateDoc(renderRef, { videoStatus: 'creating' });
-
-      const layout = templates.find((t: any) => 
-        t.imageUrlStory === renderObj.fondoUrl || t.imageUrlPost === renderObj.fondoUrl || 
-        t.imageUrlTv === renderObj.fondoUrl || t.urlStory === renderObj.fondoUrl || t.urlPost === renderObj.fondoUrl
-      );
-      const layoutId = layout?.id || renderObj.layoutId || "general";
-      const categoria = layout?.categoryId || layout?.category || renderObj.categoria || "general";
-
-      const isTv = renderObj.destType === 'tv' || renderObj.formato?.includes('tv');
-      const webhookUrl = isTv ? "https://n8n.santisoft.cl/webhook/generador-gastronomico-video-tv" : "https://n8n.santisoft.cl/webhook-test/generador-gastronomico";
-
-      // Agregamos la URL del render final para que Gemini/n8n puedan ver el diseño completo
-      const finalImageUrl = `https://butterfly.santisoft.cl/link-previews/v1?url=${encodeURIComponent(`https://digitalbite.santisoft.cl/render?id=${renderObj.id}`)}`;
-      
-      const payload = { 
-        tipo: "video", 
-        codigoPedido: renderObj.id, 
-        layoutId, 
-        categoria, 
-        finalImageUrl,
-        ...renderObj 
-      };
-
-      const res = await fetch(webhookUrl, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error("Error en webhook");
-
-      // Usamos el sistema de alertas premium con auto-cierre de 6 segundos
-      useAlertStore.getState().openAlert("¡Animación de video iniciada! Aparecerá automáticamente en esta lista en unos minutos.", 'success', 6000);
-      setShowResultModal(false);
-    } catch (err) {
-      console.error(err); 
-      // Error no desaparece solo para que el usuario lo vea
-      useAlertStore.getState().openAlert("Error al iniciar la generación de video.", 'error');
-      // Revertir estado si falla el inicio
-      const renderRef = doc(db, "renders_temporales", renderObj.id);
-      await updateDoc(renderRef, { videoStatus: null });
-    } finally {
-      setLoadingVideoId(null);
-    }
+    setRemotionData(renderObj);
+    setIsRemotionModalOpen(true);
   };
 
   const handleSendMediaAction = async () => {
@@ -419,10 +378,12 @@ export default function DashboardPage() {
       });
       if (!res.ok) throw new Error("Error en webhook de envío");
 
-      alert(`¡Enviado! El contenido fue enviado por ${sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}.`);
+      setLoadingSendId(null);
       setSendModalRender(null);
+      useAlertStore.getState().openAlert(`¡Enviado! El contenido fue enviado por ${sendMethod === 'whatsapp' ? 'WhatsApp' : 'Correo'}.`, "success", 4000);
     } catch (err) {
-      console.error(err); alert("Error al intentar enviar el contenido.");
+      console.error(err); 
+      useAlertStore.getState().openAlert("Error al intentar enviar el contenido.", "error");
     } finally {
       setLoadingSendId(null);
     }
@@ -445,8 +406,10 @@ export default function DashboardPage() {
   };
 
   const handleImg = async (e: React.FormEvent, layersByScreen: TextLayer[][] = [[]]) => {
-    e.preventDefault();
-    if (!selectedTemplate || !selectedLayout) { alert("Elige una categoría y un diseño primero."); return; }
+    if (!selectedTemplate || !selectedLayout) { 
+        useAlertStore.getState().openAlert("Elige una categoría y un diseño primero.", "warning"); 
+        return; 
+    }
     setLoadingImg(true);
     setImageUrlWatermark(null);
     try {
@@ -556,17 +519,96 @@ export default function DashboardPage() {
 
   const handleDeleteDesign = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
-    if (!confirm("¿Seguro que deseas eliminar este diseño permanentemente?")) return;
-    try {
-      setDeletingId(id);
-      await deleteDoc(doc(db, "renders_temporales", id));
-      setRenders(prev => prev.filter(r => r.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("No se pudo eliminar el diseño.");
-    } finally {
-      setDeletingId(null);
-    }
+    useAlertStore.getState().openConfirm({
+      message: "¿Seguro que deseas eliminar este diseño permanentemente?",
+      type: 'error',
+      confirmText: 'Sí, eliminar',
+      onConfirm: async () => {
+        try {
+          setDeletingId(id);
+          await deleteDoc(doc(db, "renders_temporales", id));
+          setRenders(prev => prev.filter(r => r.id !== id));
+          useAlertStore.getState().openAlert("Diseño eliminado exitosamente.", "success", 3000);
+        } catch (err) {
+          console.error(err);
+          useAlertStore.getState().openAlert("No se pudo eliminar el diseño.", "error");
+        } finally {
+          setDeletingId(null);
+        }
+      }
+    });
+  };
+
+  const handleDuplicateDesign = async (render: any, e: React.MouseEvent) => {
+    e.preventDefault();
+    useAlertStore.getState().openConfirm({
+      message: `¿Deseas duplicar el diseño "${render.titulo || 'Sin título'}"? Esto contará como una nueva generación en tu cuota mensual.`,
+      type: 'warning',
+      confirmText: 'Duplicar diseño',
+      onConfirm: async () => {
+        try {
+          setDuplicatingId(render.id);
+          
+          const { id, createdAt, videoStatus, videoUrl, ...rest } = render;
+          const newRenderData = {
+            ...rest,
+            titulo: `${rest.titulo || 'Sin título'} (Copia)`,
+            createdAt: new Date(),
+            userId: user?.uid
+          };
+
+          const docRef = await addDoc(collection(db, "renders_temporales"), newRenderData);
+          
+          // Increment generation count
+          if (userDoc?.id) {
+            await updateDoc(doc(db, "users", userDoc.id), {
+              generationCount: increment(1)
+            });
+            setUserDoc((prev: any) => prev ? { ...prev, generationCount: (prev.generationCount || 0) + 1 } : prev);
+          }
+
+          const createdRender = { 
+            id: docRef.id, 
+            ...newRenderData, 
+            createdAt: { toDate: () => new Date() } 
+          };
+          
+          setRenders(prev => [createdRender, ...prev]);
+          useAlertStore.getState().openAlert("¡Diseño duplicado exitosamente!", "success", 3000);
+        } catch (err) {
+          console.error(err);
+          useAlertStore.getState().openAlert("No se pudo duplicar el diseño.", "error");
+        } finally {
+          setDuplicatingId(null);
+        }
+      }
+    });
+  };
+
+  const handleRenameDesign = async (render: any, e: React.MouseEvent) => {
+    e.preventDefault();
+    useAlertStore.getState().openConfirm({
+      message: "Ingresa el nuevo nombre para este diseño:",
+      type: 'info',
+      confirmText: 'Renombrar',
+      hasInput: true,
+      initialInputValue: render.titulo || '',
+      onConfirm: async () => {
+        const newName = useAlertStore.getState().inputValue;
+        if (!newName || newName === render.titulo) return;
+        
+        try {
+          const renderRef = doc(db, "renders_temporales", render.id);
+          await updateDoc(renderRef, { titulo: newName });
+          
+          setRenders(prev => prev.map(r => r.id === render.id ? { ...r, titulo: newName } : r));
+          useAlertStore.getState().openAlert("Diseño renombrado correctamente.", "success", 3000);
+        } catch (err) {
+          console.error(err);
+          useAlertStore.getState().openAlert("No se pudo renombrar el diseño.", "error");
+        }
+      }
+    });
   };
 
   return (
@@ -725,6 +767,9 @@ export default function DashboardPage() {
                                   </span>
                               </div>
                               <div className="absolute top-3 right-3 flex gap-2 z-10 transition-opacity opacity-0 group-hover:opacity-100">
+                                   <button onClick={(e) => handleRenameDesign(render, e)} className="bg-white/90 hover:bg-white backdrop-blur-md text-slate-700 text-[12px] font-black w-7 h-7 flex items-center justify-center rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95" title="Renombrar diseño">
+                                     ✒️
+                                   </button>
                                    <button onClick={(e) => { e.preventDefault(); const r = render;
                                      setFormData({ nombreLocal: r.nombreLocal||'', titulo: r.titulo||'', subtitulo: r.subtitulo||'', ingredientes: r.ingredientes||'', precio: r.precio||'', mensaje: r.mensaje||'', facebook: r.facebook||'', instagram: r.instagram||'', tiktok: r.tiktok||'', destType: r.destType||'rrss', formato: r.formato||'story', screensCount: r.screensCount||1, logo: r.logo||'', menusByScreen: r.menusByScreen || [{ isMenuMode: false, menuItems: [{ name: '', price: '' }] }] });
                                      setSelectedTemplate(r.categorySlug || null);
@@ -734,6 +779,9 @@ export default function DashboardPage() {
                                      setIsEditorOpen(true);
                                    }} className="bg-indigo-500/90 hover:bg-indigo-600 backdrop-blur-md text-white text-[11px] font-black px-2 h-7 flex items-center gap-1 rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95">
                                      ✏️ Editar
+                                   </button>
+                                   <button onClick={(e) => handleDuplicateDesign(render, e)} disabled={duplicatingId === render.id} className="bg-amber-500/90 hover:bg-amber-600 backdrop-blur-md text-white text-[12px] font-black w-7 h-7 flex items-center justify-center rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-50" title="Duplicar Diseño">
+                                     {duplicatingId === render.id ? <div className="w-3 h-3 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : <span aria-hidden="true">📋</span>}
                                    </button>
                                   <button onClick={(e) => handleDeleteDesign(render.id, e)} disabled={deletingId === render.id} className="bg-red-500/90 hover:bg-red-600 backdrop-blur-md text-white text-[12px] font-black w-7 h-7 flex items-center justify-center rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-50">
                                     {deletingId === render.id ? <div className="w-3 h-3 border-2 border-white/50 border-t-white rounded-full animate-spin" /> : <span aria-hidden="true" title="Eliminar Diseño">🗑️</span>}
@@ -755,10 +803,22 @@ export default function DashboardPage() {
                                        <span aria-hidden="true">▶️</span> Play Video
                                     </a>
                                   ) : render.videoStatus === 'creating' ? (
-                                    <div className="flex items-center justify-center gap-2 w-full bg-amber-50 border border-amber-100 text-amber-600 font-bold py-2 rounded-xl text-[10px] animate-pulse">
-                                      <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                                      🎬 Procesando...
-                                    </div>
+                                     <div className="flex flex-col gap-1 w-full">
+                                        <div className="flex items-center justify-center gap-2 w-full bg-amber-50 border border-amber-100 text-amber-600 font-bold py-2 rounded-xl text-[10px] animate-pulse">
+                                          <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                                          🎬 Procesando...
+                                        </div>
+                                        <button 
+                                          onClick={async () => {
+                                            const renderRef = doc(db, "renders_temporales", render.id);
+                                            await updateDoc(renderRef, { videoStatus: null });
+                                            setRenders(prev => prev.map(r => r.id === render.id ? { ...r, videoStatus: null } : r));
+                                          }}
+                                          className="text-[9px] text-slate-400 hover:text-rose-500 font-bold transition-colors"
+                                        >
+                                          ¿Proceso trabado? Clic para reintentar
+                                        </button>
+                                     </div>
                                   ) : (
                                     <button onClick={() => handleVideoGenerate(render)} disabled={loadingVideoId === render.id} aria-label={`Generar video de ${render.titulo || 'diseño'}`} className="flex items-center justify-center gap-1 w-full bg-rose-50 hover:bg-rose-100 disabled:bg-slate-50 border border-rose-100 disabled:border-slate-100 text-rose-600 disabled:text-slate-400 font-bold py-2 rounded-xl text-[11px] transition-colors">
                                        {loadingVideoId === render.id ? <div className="w-3 h-3 border-2 border-slate-400 border-t-white rounded-full animate-spin"/> : <span aria-hidden="true">🎬</span>} 
@@ -963,17 +1023,36 @@ export default function DashboardPage() {
                                         {localLayers.map((lyr: any) => {
                                           const leftPct = lyr.posX !== undefined ? lyr.posX : (lyr.x / baseWidth) * 100;
                                           const topPct = lyr.posY !== undefined ? lyr.posY : (lyr.y / baseHeight) * 100;
-                                          const wVal = lyr.width;
+                                          // Width and Height scaling guard auto-healer
                                           let widthPct = "100%";
-                                          if (wVal) {
-                                            if (typeof wVal === 'string' && wVal.endsWith('%')) widthPct = wVal;
-                                            else if (typeof wVal === 'number' && wVal <= 100) widthPct = `${wVal}%`;
-                                            else widthPct = `${(wVal / (formData.formato === 'post' ? 400 : isHorizontal ? 700 : 250)) * 100}%`;
+                                          if (lyr.width !== undefined && lyr.width !== null && lyr.width !== "") {
+                                            if (typeof lyr.width === 'string' && lyr.width.endsWith('%')) {
+                                              widthPct = lyr.width;
+                                            } else {
+                                              const wNum = parseFloat(String(lyr.width));
+                                              if (!isNaN(wNum)) {
+                                                if (wNum <= 100) widthPct = `${wNum}%`;
+                                                else widthPct = `${(wNum / (formData.formato === 'post' ? 400 : isHorizontal ? 700 : 250)) * 100}%`;
+                                              }
+                                            }
                                           }
+                                          
+                                          let heightPct = "auto";
+                                          if (lyr.height !== undefined && lyr.height !== null && lyr.height !== "") {
+                                            if (typeof lyr.height === 'string' && lyr.height.endsWith('%')) {
+                                              heightPct = lyr.height;
+                                            } else {
+                                              const hNum = parseFloat(String(lyr.height));
+                                              if (!isNaN(hNum)) {
+                                                if (hNum <= 100) heightPct = `${hNum}%`;
+                                              }
+                                            }
+                                          }
+
                                           return (
                                             <div key={lyr.id} style={{
                                               position: 'absolute', left: `${leftPct}%`, top: `${topPct}%`,
-                                              width: widthPct, transform: 'translate(-50%, -50%)',
+                                              width: widthPct, height: heightPct, transform: 'translate(-50%, -50%)',
                                               display: 'flex', alignItems: 'center',
                                               justifyContent: lyr.textAlign === 'center' ? 'center' : lyr.textAlign === 'right' ? 'flex-end' : 'flex-start',
                                               fontFamily: lyr.fontFamily || 'Inter', fontWeight: lyr.fontWeight || '700',
@@ -1282,9 +1361,25 @@ export default function DashboardPage() {
 
       {/* MODALS */}
       <ProductModal 
-        isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} products={products} dbCategories={dbCategories}
-        onSelect={(url) => { setPendingProductToAdd(url); setIsProductModalOpen(false); }} refreshProducts={fetchProducts} category={selectedTemplate}
+        isOpen={isProductModalOpen} 
+        onClose={() => setIsProductModalOpen(false)} 
+        products={products} 
+        dbCategories={dbCategories}
+        onSelect={(url) => { setPendingProductToAdd(url); setIsProductModalOpen(false); }} 
+        refreshProducts={fetchProducts} 
+        category={selectedTemplate}
       />
+
+      {remotionData && (
+        <RemotionModal
+          isOpen={isRemotionModalOpen}
+          onClose={() => setIsRemotionModalOpen(false)}
+          imageUrl={remotionData.fondoUrl}
+          layers={remotionData.textLayers || []}
+          formato={remotionData.formato || 'story'}
+          menuData={remotionData.menusByScreen?.[remotionData.screenIndex || 0]}
+        />
+      )}
 
       {/* Result Image Generated Modal with Video Action */}
       {showResultModal && imageUrlWatermark && imageUrlWatermark.length > 0 && isGeneratorMode && (
