@@ -19,9 +19,9 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://digitalbite.app"),
-  title: "DigitalBite | El Editor Gráfico Inteligente para Restaurantes",
-  description: "Crea banners, posts y menús digitales para tu restaurante en segundos con Inteligencia Artificial. La herramienta definitiva para marketing gastronómico.",
-  keywords: ["Marketing Gastronómico","Menú Digital","Banners para Restaurantes","Editor de Imágenes IA","DigitalBite","Diseño para Comida","Publicidad Restaurantes"],
+  title: "DigitalBite | Creador de Menús Digitales e Imágenes con IA",
+  description: "Software para restaurantes que permite crear banners, posts y menús digitales con Inteligencia Artificial. La herramienta SaaS definitiva para marketing gastronómico sin agencias.",
+  keywords: ["Software para restaurantes","Menú Digital","Generador de menú","Banners para Restaurantes","Editor de Imágenes IA","Diseño para Comida","SaaS Gastronómico"],
   authors: [{ name: "DigitalBite Team", url: "https://digitalbite.app" }],
   creator: "DigitalBite AI",
   publisher: "DigitalBite",
@@ -59,8 +59,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,600&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          "@context":"https://schema.org","@type":"ProfessionalService",
-          "name":"DigitalBite","image":"https://digitalbite.app/logo.png",
+          "@context":"https://schema.org","@type":"SoftwareApplication",
+          "name":"DigitalBite",
+          "applicationCategory": "DesignApplication",
+          "operatingSystem": "All",
+          "image":"https://digitalbite.app/logo.png",
+          "description": "Plataforma de inteligencia artificial para diseño gastronómico y creación de menús para restaurantes.",
           "@id":"https://digitalbite.app","url":"https://digitalbite.app",
         })}} />
       </head>

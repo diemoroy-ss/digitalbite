@@ -86,7 +86,7 @@ export default function BeforeAfter() {
             <div className="absolute inset-0 h-full w-full">
                <Image
                  src={examples[active].before}
-                 alt="Antes"
+                 alt="Fotografía casera original del platillo sin edición"
                  fill
                  className="object-cover"
                  draggable={false}
@@ -100,7 +100,7 @@ export default function BeforeAfter() {
               <div className="absolute inset-0 h-full w-full">
                 <Image
                    src={examples[active].after}
-                   alt="Después"
+                   alt="Diseño final publicitario generado con Inteligencia Artificial"
                    fill
                    className="object-cover"
                    draggable={false}

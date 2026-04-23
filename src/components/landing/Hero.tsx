@@ -41,7 +41,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="mt-6 font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-medium leading-[0.95] text-balance text-white"
+            className="mt-6 font-display text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-medium leading-[0.95] text-balance text-white"
           >
             Tu menú,{" "}
             <span className="italic text-primary">con look</span>
@@ -148,7 +148,7 @@ export default function Hero() {
                   >
                     <Image
                       src={src}
-                      alt=""
+                      alt={`Diseño gastronómico premium generado con Inteligencia Artificial - Ejemplo ${i + 1}`}
                       fill
                       className="object-cover"
                       priority

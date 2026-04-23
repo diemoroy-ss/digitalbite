@@ -9,7 +9,7 @@ export default function FinalCTA() {
       <div className="absolute inset-0 h-full w-full opacity-30">
         <Image
           src={bg}
-          alt=""
+          alt="Fondo decorativo abstracto para aplicación de diseño de restaurantes"
           fill
           className="object-cover"
           loading="lazy"
